@@ -1,0 +1,2 @@
+http://ec2-50-18-150-78.us-west-1.compute.amazonaws.com/cs184hw1/reports/cs184-em1347212365/hw1_report_cs184-em1347212365.html
+http://ec2-50-18-150-78.us-west-1.compute.amazonaws.com/cs184web/hw1/reports/cs184-em/1347212570/index.html
