@@ -222,11 +222,16 @@ void display() {
 	glUniform1i(islight,true);
 
     glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    
     for (std::vector<Mesh>::iterator it = models.begin(); it != models.end(); ++it) {
         glVertexPointer(3, GL_FLOAT, 0, &(it->_vertices)[0]);
+        glNormalPointer(GL_FLOAT, 0, &(it->_normals)[0]);
         glDrawElements(GL_TRIANGLES, it->_faces.size(), GL_UNSIGNED_INT, &(it->_faces)[0]);  
     }
     glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    
 	glutSwapBuffers();
 }
 

@@ -5,6 +5,12 @@
 
 #include "mesh.h"
 
+namespace {
+
+glm::vec3 getNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) {
+    return glm::normalize(glm::cross(v2-v1, v3-v1));
+}
+} // namespace
 
 void Mesh::loadMesh(const char * filename) {
     std::string str = ""; 
@@ -73,6 +79,7 @@ void Mesh::loadMesh(const char * filename) {
             }
             z = atof(num_holder.c_str());
             _vertices.push_back(glm::vec3(x,y,z));
+            _normals.push_back(glm::vec3(0,0,0)); // Set placeholder
             
         }
         
@@ -112,10 +119,28 @@ void Mesh::loadMesh(const char * filename) {
             _faces.push_back(v2);
             _faces.push_back(v3);
             
+            _normals[v1] += getNormal(_vertices[v1], _vertices[v2], _vertices[v3]);
+            _normals[v2] += getNormal(_vertices[v1], _vertices[v2], _vertices[v3]);
+            _normals[v3] += getNormal(_vertices[v1], _vertices[v2], _vertices[v3]);
+            
+            _vertex_to_faces[v1].push_back(i);
+            _vertex_to_faces[v2].push_back(i);
+            _vertex_to_faces[v3].push_back(i);    
         }
     }
     else {
     	std::cerr << "Unable to Open File " << filename << "\n"; 
     	throw 2; 
     }
+    calcNorms();
 }
+
+void Mesh::calcNorms() {
+    for (std::map<int, std::vector<int> >::iterator it = _vertex_to_faces.begin(); it != _vertex_to_faces.end(); ++it) {
+        _normals[it->first] = glm::normalize(
+                                glm::vec3(_normals[it->first].x / static_cast<double>(it->second.size()),
+                                          _normals[it->first].y / static_cast<double>(it->second.size()),
+                                          _normals[it->first].z / static_cast<double>(it->second.size())));
+    } 
+}
+
