@@ -19,7 +19,7 @@ all: transform
 
 transform: main.o shaders.o Transform.o shaders.h Transform.h mesh.o
 	$(CC) $(CFLAGS) -o transforms shaders.o main.o Transform.o mesh.o $(INCFLAGS) $(LDFLAGS) 
-main.o: main.cpp shaders.h Transform.h
+main.o: main.cpp shaders.h Transform.h mesh.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c main.cpp
 mesh.o: mesh.cpp mesh.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c mesh.cpp

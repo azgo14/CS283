@@ -1,16 +1,19 @@
 #ifndef _MESH_H_
 #define _MESH_H_
 
+#include <GL/glut.h>
 #include <string>
+#include <vector>
+#include <glm/glm.hpp> // Replace with Transform.h if needed
 
 class Mesh {
 public:
-  Mesh(void) {};
+    Mesh(void) {};
   
-  void loadMesh(std::string filename);
+    void loadMesh(const char * filename);
   
-private:
-
+    std::vector<glm::vec3> _vertices;
+    std::vector<glm::vec3> _faces;
 };
 
 #endif

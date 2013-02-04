@@ -221,7 +221,12 @@ void display() {
 	glUniform1fv(shininess,1,high); 
 	glUniform1i(islight,true);
 
-	glutSolidTeapot(2);
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glEnableClientState(GL_VERTEX_ARRAY);
+        glVertexPointer(3, GL_FLOAT, 0, &(models[0]._vertices)[0]);
+        glDrawElements(GL_TRIANGLES, models[0]._faces.size(), GL_UNSIGNED_INT, &(models[0]._faces)[0]);  
+    glDisableClientState(GL_VERTEX_ARRAY);
 	glutSwapBuffers();
 }
 
@@ -240,9 +245,11 @@ int main(int argc,char* argv[]) {
 	glutReshapeWindow(w,h);
 	
 	if(argc > 1) {
+        std::cout << "Loading in file: " << argv[1] << std::endl;
         Mesh model;
         model.loadMesh(argv[1]);
         models.push_back(model);
+        std::cout << "Done loading" << std::endl;
 	}
 	
 	printHelp();
