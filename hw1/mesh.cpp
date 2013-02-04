@@ -73,6 +73,7 @@ void Mesh::loadMesh(const char * filename) {
             }
             z = atof(num_holder.c_str());
             _vertices.push_back(glm::vec3(x,y,z));
+            
         }
         
         for (int i = 0; i < num_faces; ++i) {
@@ -107,7 +108,10 @@ void Mesh::loadMesh(const char * filename) {
                 throw 2;
             }
             v3 = atoi(num_holder.c_str());
-            _faces.push_back(glm::vec3(v1,v2,v3));
+            _faces.push_back(v1);
+            _faces.push_back(v2);
+            _faces.push_back(v3);
+            
         }
     }
     else {

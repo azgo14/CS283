@@ -221,11 +221,11 @@ void display() {
 	glUniform1fv(shininess,1,high); 
 	glUniform1i(islight,true);
 
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
     glEnableClientState(GL_VERTEX_ARRAY);
-        glVertexPointer(3, GL_FLOAT, 0, &(models[0]._vertices)[0]);
-        glDrawElements(GL_TRIANGLES, models[0]._faces.size(), GL_UNSIGNED_INT, &(models[0]._faces)[0]);  
+    for (std::vector<Mesh>::iterator it = models.begin(); it != models.end(); ++it) {
+        glVertexPointer(3, GL_FLOAT, 0, &(it->_vertices)[0]);
+        glDrawElements(GL_TRIANGLES, it->_faces.size(), GL_UNSIGNED_INT, &(it->_faces)[0]);  
+    }
     glDisableClientState(GL_VERTEX_ARRAY);
 	glutSwapBuffers();
 }

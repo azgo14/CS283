@@ -13,7 +13,8 @@ public:
     void loadMesh(const char * filename);
   
     std::vector<glm::vec3> _vertices;
-    std::vector<glm::vec3> _faces;
+    std::vector<glm::vec3> _normals;
+    std::vector<int> _faces;
 };
 
 #endif
