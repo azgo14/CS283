@@ -13,6 +13,7 @@ public:
   
     void loadMesh(const char * filename);
     void calcNorms();
+    void normalizeVerts();
     
     
     std::vector<glm::vec3> _vertices;

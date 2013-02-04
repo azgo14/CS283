@@ -24,7 +24,7 @@ vec3 up;  // The (regularly updated) vector coordinates of the up location
 const vec3 eyeinit(0.0,0.0,5.0); // Initial eye position, also for resets
 const vec3 upinit(0.0,1.0,0.0); // Initial up position, also for resets
 bool useGlu; // Toggle use of "official" opengl/glm transform vs user code
-int w = 600, h = 400; // width and height 
+int w = 600, h = 600; // width and height 
 
 
 GLuint vertexshader,fragmentshader,shaderprogram; // shaders
@@ -51,8 +51,8 @@ GLuint diffuse;
 GLuint specular; 
 GLuint shininess; 
 
-// Variables to keep track of mesh models
-std::vector<Mesh> models;
+// Variables to keep track of mesh model
+Mesh model;
 
 // New helper transformation function to transform vector by modelview 
 // May be better done using newer glm functionality.
@@ -154,7 +154,7 @@ void reshape(int width,int height){
 
 
 
-void init() {
+void init(const char* filename) {
 
 	// Set up initial position for eye,up and amount
 	// As well as booleans 
@@ -182,7 +182,11 @@ void init() {
 	ambient = glGetUniformLocation(shaderprogram,"ambient");       
 	diffuse = glGetUniformLocation(shaderprogram,"diffuse");       
 	specular = glGetUniformLocation(shaderprogram,"specular");       
-	shininess = glGetUniformLocation(shaderprogram,"shininess");       
+	shininess = glGetUniformLocation(shaderprogram,"shininess");     
+	
+	std::cout << "Loading in file: " << filename << std::endl;
+    model.loadMesh(filename);
+    std::cout << "Done loading" << std::endl;  
 }
 
 void display() {
@@ -224,11 +228,10 @@ void display() {
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     
-    for (std::vector<Mesh>::iterator it = models.begin(); it != models.end(); ++it) {
-        glVertexPointer(3, GL_FLOAT, 0, &(it->_vertices)[0]);
-        glNormalPointer(GL_FLOAT, 0, &(it->_normals)[0]);
-        glDrawElements(GL_TRIANGLES, it->_faces.size(), GL_UNSIGNED_INT, &(it->_faces)[0]);  
-    }
+    glVertexPointer(3, GL_FLOAT, 0, &(model._vertices)[0]);
+    glNormalPointer(GL_FLOAT, 0, &(model._normals)[0]);
+    glDrawElements(GL_TRIANGLES, model._faces.size(), GL_UNSIGNED_INT, &(model._faces)[0]);  
+   
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     
@@ -237,25 +240,21 @@ void display() {
 
 int main(int argc,char* argv[]) {
 	
+	if(argc != 2) {
+        std::cerr << "I only want one argument that is the path to the OFF file" << std::endl;
+        throw 2;
+    }
 	//Initialize GLUT
 	FreeImage_Initialise();
 	glutInit(&argc,argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutCreateWindow("HW1: Transformations");
-	init();
+	init(argv[1]);
 	glutDisplayFunc(display);
 	glutSpecialFunc(specialKey);
 	glutKeyboardFunc(keyboard);
 	glutReshapeFunc(reshape);
 	glutReshapeWindow(w,h);
-	
-	if(argc > 1) {
-        std::cout << "Loading in file: " << argv[1] << std::endl;
-        Mesh model;
-        model.loadMesh(argv[1]);
-        models.push_back(model);
-        std::cout << "Done loading" << std::endl;
-	}
 	
 	printHelp();
 	glutMainLoop();	

@@ -133,6 +133,38 @@ void Mesh::loadMesh(const char * filename) {
     	throw 2; 
     }
     calcNorms();
+    normalizeVerts();
+}
+
+void Mesh::normalizeVerts() {
+    float min_x = 999999;
+    float min_y = 999999;
+    float min_z = 999999;
+    float max_x = -999999;
+    float max_y = -999999;
+    float max_z  = -999999;
+    
+    for (std::vector<glm::vec3>::iterator it = _vertices.begin(); it != _vertices.end(); ++it) {
+        min_x = std::min(it->x, min_x);      
+        min_y = std::min(it->y, min_y);      
+        min_z = std::min(it->z, min_z);      
+
+        max_x = std::max(it->x, max_x);      
+        max_y = std::max(it->y, max_y);      
+        max_z = std::max(it->z, max_z);      
+    }
+        
+    float scale = std::max((max_x - min_x), std::max((max_y - min_y), (max_z - min_z)));
+    for (std::vector<glm::vec3>::iterator it = _vertices.begin(); it != _vertices.end(); ++it) {
+        it->x -= (min_x + max_x) / 2.0;
+        it->y -= (min_y + max_y) / 2.0;
+        it->z -= (min_z + max_z) / 2.0;
+        
+        it->x = 5 * it->x / scale;
+        it->y = 5 * it->y / scale;
+        it->z = 5 * it->z / scale;
+        
+    }
 }
 
 void Mesh::calcNorms() {
