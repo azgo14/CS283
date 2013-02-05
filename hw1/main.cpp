@@ -87,7 +87,8 @@ void printHelp() {
 		<< "occurs with each arrow press.\n" 
 		<< "press 'g' to switch between using glm::lookAt or your own LookAt.\n"     
 		<< "press 'r' to reset the transformation (eye and up).\n"
-		<< "press ESC to quit.\n";  
+		<< "press 'z' to zoom in. 'x' to zoom out.\n"
+		<< "press ESC to quit.\n\n";  
 
 }
 
@@ -252,6 +253,8 @@ int main(int argc,char* argv[]) {
         std::cerr << "I only want one argument that is the path to the OFF file" << std::endl;
         throw 2;
     }
+    printHelp();
+	
 	//Initialize GLUT
 	FreeImage_Initialise();
 	glutInit(&argc,argv);
@@ -264,7 +267,6 @@ int main(int argc,char* argv[]) {
 	glutReshapeFunc(reshape);
 	glutReshapeWindow(w,h);
 	
-	printHelp();
 	glutMainLoop();	
 	FreeImage_DeInitialise();
 
