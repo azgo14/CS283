@@ -25,7 +25,7 @@ const vec3 eyeinit(0.0,0.0,5.0); // Initial eye position, also for resets
 const vec3 upinit(0.0,1.0,0.0); // Initial up position, also for resets
 bool useGlu; // Toggle use of "official" opengl/glm transform vs user code
 int w = 600, h = 600; // width and height 
-
+int fovy = 90;
 
 GLuint vertexshader,fragmentshader,shaderprogram; // shaders
 
@@ -91,6 +91,18 @@ void printHelp() {
 
 }
 
+// Uses the Projection matrices (technically deprecated) to set perspective 
+// We could also do this in a more modern fashion with glm.  
+void reshape(int width,int height){
+	w = width;
+	h = height;
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(fovy,w/(float)h,0.1,99);
+	glViewport(0,0,w,h);
+}
+
+
 void keyboard(unsigned char key,int x,int y) {
 	switch(key) {
 		case '+':
@@ -115,7 +127,15 @@ void keyboard(unsigned char key,int x,int y) {
 		case 'r': // reset eye and up vectors 
 			eye = eyeinit; 
 			up = upinit; 
-			break;                 
+            break;
+        case 'z':
+            fovy -= amount;
+            reshape(w,h);
+            break;
+        case 'x':
+            fovy += amount;
+            reshape(w,h);
+            break;
 	}
 	glutPostRedisplay();
 }
@@ -140,18 +160,6 @@ void specialKey(int key,int x,int y) {
 	}
 	glutPostRedisplay();
 }
-
-// Uses the Projection matrices (technically deprecated) to set perspective 
-// We could also do this in a more modern fashion with glm.  
-void reshape(int width,int height){
-	w = width;
-	h = height;
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	gluPerspective(90,w/(float)h,0.1,99);
-	glViewport(0,0,w,h);
-}
-
 
 
 void init(const char* filename) {
