@@ -16,6 +16,7 @@
 #include <FreeImage.h>
 #include <vector>
 #include "mesh.h"
+#include <cstdlib>
 
 int amount; // The amount of rotation for each arrow press
 
@@ -26,6 +27,7 @@ const vec3 upinit(0.0,1.0,0.0); // Initial up position, also for resets
 bool useGlu; // Toggle use of "official" opengl/glm transform vs user code
 int w = 600, h = 600; // width and height 
 int fovy = 90;
+bool debug = false;
 
 GLuint vertexshader,fragmentshader,shaderprogram; // shaders
 
@@ -137,6 +139,9 @@ void keyboard(unsigned char key,int x,int y) {
             fovy += amount;
             reshape(w,h);
             break;
+        case 'd':
+            debug = !debug;
+            break;
 	}
 	glutPostRedisplay();
 }
@@ -236,11 +241,24 @@ void display() {
 
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
-    
+    if (debug) {
+        glEnableClientState(GL_COLOR_ARRAY);
+        std::vector<glm::vec3> color;
+        int vert_size = model._vertices.size();
+        for (std::vector<glm::vec3>::iterator it = model._vertices.begin(); it != model._vertices.end(); ++it) {
+            color.push_back(glm::vec3((rand() % vert_size) / static_cast<float>(vert_size),
+                                      (rand() % vert_size) / static_cast<float>(vert_size),
+                                      (rand() % vert_size) / static_cast<float>(vert_size)));
+        }
+        glColorPointer(3, GL_FLOAT, 0, &(color)[0]);        
+    }
     glVertexPointer(3, GL_FLOAT, 0, &(model._vertices)[0]);
     glNormalPointer(GL_FLOAT, 0, &(model._normals)[0]);
     glDrawElements(GL_TRIANGLES, model._faces.size(), GL_UNSIGNED_INT, &(model._faces)[0]);  
-   
+    if (debug) {
+        glDisableClientState(GL_COLOR_ARRAY);
+        
+    }
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     
