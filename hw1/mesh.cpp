@@ -2,6 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <stdlib.h>
+#include <set>
 
 #include "mesh.h"
 
@@ -197,4 +198,115 @@ void Mesh::debugVertColors(std::vector<glm::vec3>* colors) {
     }
 }
 
+bool Mesh::hasEdge(int vert1, int vert2) {
+    for (std::vector<int>::const_iterator v1_it = _vertex_to_faces[vert1].begin();
+         v1_it != _vertex_to_faces[vert1].end(); ++v1_it) {
+        for (std::vector<int>::const_iterator v2_it = _vertex_to_faces[vert2].begin();
+             v2_it != _vertex_to_faces[vert2].end(); ++v2_it) {
+            if (*v1_it == *v2_it) {  // if two vertices have the same face, they have an edge between them
+                return true;
+            }
+        }   
+    }
+    return false;
+}    
+
+void Mesh::collapse(int vert1, int vert2) {
+    if (!hasEdge(vert1, vert2)) {
+        return;
+    }
+    std::cout<<"here"<<std::endl;
+    glm::vec3 vertex1 = _vertices[vert1];
+    glm::vec3 vertex2 = _vertices[vert2];
+    glm::vec3 new_vert(.5 * (vertex1.x + vertex2.x), .5 * (vertex1.y + vertex2.y), .5 * (vertex1.z + vertex2.z));
+    
+    _vertices[vert1] = new_vert;  // index of vert1 is now the new vert. update vert_face_adjacency to reflect this
+    _vertices[vert2] = glm::vec3(10000,10000,10000);  // just junk data to placehold
+    
+    // change all occurrences of v1 and v2 with new v
+    for (std::vector<int>::iterator v2_it = _vertex_to_faces[vert2].begin();
+         v2_it != _vertex_to_faces[vert2].end(); ++v2_it) {
+        if (_faces[3*(*v2_it)] == vert2) {  // vert2 doesn't exist anymore, need to replace with vert1 which is the new vertex index
+            _faces[3*(*v2_it)] = vert1;
+        }
+        if (_faces[3*(*v2_it) + 1] == vert2) {
+            _faces[3*(*v2_it) + 1] = vert1;
+        }
+        if (_faces[3*(*v2_it) + 2] == vert2) {
+            _faces[3*(*v2_it) + 2] = vert1;
+        }
+        if (std::find(_vertex_to_faces[vert1].begin(), _vertex_to_faces[vert1].end(),*v2_it) == _vertex_to_faces[vert1].end()) {
+            _vertex_to_faces[vert1].push_back(*v2_it);  // vert1 is the new vertex index. faces adjacent to v2 and v1 are now adjacent to new v
+        }
+    }
+    _vertex_to_faces.erase(vert2); // cleanup
+    
+
+    // remove degenerate faces
+    std::set<int> degenerate_faces;
+    for (std::vector<int>::iterator v_it = _vertex_to_faces[vert1].begin();
+         v_it != _vertex_to_faces[vert1].end(); ++v_it) {
+        bool once = false;
+        bool degenerate = false;
+        if (_faces[3*(*v_it)] == vert1) {
+            once = true;
+        }
+        if (_faces[3*(*v_it) + 1] == vert1) {
+            if (once) {  // degenerate case (2 vertices are the same out of 3)
+                degenerate = true;
+            } else {
+                once = true;
+            }
+        }
+        if (_faces[3*(*v_it) + 2] == vert1) {
+            if (once) {
+                degenerate = true;
+            } else {
+                once = true;
+            }
+        }
+        if (degenerate) {
+            degenerate_faces.insert(*v_it);
+        }
+    }
+    
+    for (std::set<int>::iterator v_it = degenerate_faces.begin(); v_it != degenerate_faces.end(); ++v_it) {    
+        std::set<int> temp_v;
+        temp_v.insert(_faces[3*(*v_it)]);
+        temp_v.insert(_faces[3*(*v_it)+1]);
+        temp_v.insert(_faces[3*(*v_it)+2]);
+        for (std::set<int>::iterator temp_it = temp_v.begin(); temp_it != temp_v.end(); ++temp_it) {                
+            std::vector<int>::iterator location = std::find(_vertex_to_faces[*temp_it].begin(), _vertex_to_faces[*temp_it].end(), *v_it);
+            while (location != _vertex_to_faces[*temp_it].end()) {
+                _vertex_to_faces[*temp_it].erase(location);  // delete degenerate face in vertex to faces
+                location = std::find(_vertex_to_faces[*temp_it].begin(), _vertex_to_faces[*temp_it].end(), *v_it);
+            }
+        }    
+        _faces[3*(*v_it)] = 0; // need a placeholder so indices are the same. nothing will point to this face index (i hope)
+        _faces[3*(*v_it)+1] = 0;
+        _faces[3*(*v_it)+2] = 0;
+    }
+                 
+    // calculate normal at vert1
+    _normals[vert2] = glm::vec3(10000,10000,10000); // just junk data
+    std::set<int> affected_v;
+    for (std::vector<int>::iterator v_it = _vertex_to_faces[vert1].begin();
+         v_it != _vertex_to_faces[vert1].end(); ++v_it) {
+         affected_v.insert(_faces[3*(*v_it)]);
+         affected_v.insert(_faces[3*(*v_it)+1]);
+         affected_v.insert(_faces[3*(*v_it)+2]);
+    }
+    
+    for (std::set<int>::iterator it = affected_v.begin(); it != affected_v.end(); ++it) {
+        _normals[*it] = glm::vec3(0,0,0);
+        for (std::vector<int>::iterator v_it = _vertex_to_faces[*it].begin();
+             v_it != _vertex_to_faces[*it].end(); ++v_it) {
+            _normals[*it] += getNormal(_vertices[_faces[3*(*v_it)]], _vertices[_faces[3*(*v_it)+1]], _vertices[_faces[3*(*v_it)+2]]);
+        }
+        _normals[*it] = glm::normalize(
+                            glm::vec3(_normals[*it].x / static_cast<double>(_vertex_to_faces[*it].size()),
+                                      _normals[*it].y / static_cast<double>(_vertex_to_faces[*it].size()),
+                                      _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
+    }
+}
 

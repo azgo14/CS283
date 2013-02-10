@@ -27,6 +27,7 @@ bool useGlu; // Toggle use of "official" opengl/glm transform vs user code
 int w = 600, h = 600; // width and height 
 int fovy = 90;
 bool debug = false;
+bool wireframe = false;
 
 GLuint vertexshader,fragmentshader,shaderprogram; // shaders
 
@@ -142,6 +143,9 @@ void keyboard(unsigned char key,int x,int y) {
         case 'd':
             debug = !debug;
             break;
+        case 'w':
+            wireframe = !wireframe;
+            break;
 	}
 	glutPostRedisplay();
 }
@@ -207,7 +211,11 @@ void init(const char* filename) {
 void display() {
 	glClearColor(0,0,1,0);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+    if (wireframe) {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+    } else {
+        glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+    }
 
 	glMatrixMode(GL_MODELVIEW);
 	mat4 mv; 
@@ -243,6 +251,7 @@ void display() {
     
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
+    model.collapse(0,1);
     if (debug) {
         glUniform1i(isdebug, true);
         glEnableClientState(GL_COLOR_ARRAY);

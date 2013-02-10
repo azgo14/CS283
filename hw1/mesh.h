@@ -17,6 +17,8 @@ public:
     void debugVerts(std::vector<glm::vec3>* vertex);
     void debugNorms(std::vector<glm::vec3>* norms);
     void debugVertColors(std::vector<glm::vec3>* colors);
+    void collapse(int vert1, int vert2);
+    bool hasEdge(int vert1, int vert2);
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;
