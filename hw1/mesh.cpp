@@ -176,3 +176,25 @@ void Mesh::calcNorms() {
     } 
 }
 
+void Mesh::debugVerts(std::vector<glm::vec3>* vertices) {
+    for (std::vector<int>::iterator it = _faces.begin(); it != _faces.end(); ++it) {
+        vertices->push_back(_vertices[*it]);
+    }
+}
+
+void Mesh::debugNorms(std::vector<glm::vec3>* normals) {
+    for (std::vector<int>::iterator it = _faces.begin(); it != _faces.end(); ++it) {
+          normals->push_back(_normals[*it]);
+    }
+}
+
+void Mesh::debugVertColors(std::vector<glm::vec3>* colors) {
+    int vert_size = _vertices.size();
+    for (std::vector<int>::iterator it = _faces.begin(); it != _faces.end(); ++it) {
+        colors->push_back(glm::vec3((rand() % vert_size) / static_cast<float>(vert_size),
+                                    (rand() % vert_size) / static_cast<float>(vert_size),
+                                    (rand() % vert_size) / static_cast<float>(vert_size)));
+    }
+}
+
+

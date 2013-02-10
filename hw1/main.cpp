@@ -16,7 +16,6 @@
 #include <FreeImage.h>
 #include <vector>
 #include "mesh.h"
-#include <cstdlib>
 
 int amount; // The amount of rotation for each arrow press
 
@@ -52,6 +51,7 @@ GLuint ambient;
 GLuint diffuse; 
 GLuint specular; 
 GLuint shininess; 
+GLuint isdebug;
 
 // Variables to keep track of mesh model
 Mesh model;
@@ -188,7 +188,8 @@ void init(const char* filename) {
 	vertexshader = initshaders(GL_VERTEX_SHADER,"shaders/light.vert.glsl");
 	fragmentshader = initshaders(GL_FRAGMENT_SHADER,"shaders/light.frag.glsl");
 	shaderprogram = initprogram(vertexshader,fragmentshader); 
-	islight = glGetUniformLocation(shaderprogram,"islight");        
+	islight = glGetUniformLocation(shaderprogram,"islight"); 
+    isdebug = glGetUniformLocation(shaderprogram, "debug");     
 	light0posn = glGetUniformLocation(shaderprogram,"light0posn");       
 	light0color = glGetUniformLocation(shaderprogram,"light0color");       
 	light1posn = glGetUniformLocation(shaderprogram,"light1posn");       
@@ -238,25 +239,28 @@ void display() {
 	glUniform4fv(specular,1,one); 
 	glUniform1fv(shininess,1,high); 
 	glUniform1i(islight,true);
-
+    glUniform1i(isdebug, false);
+    
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     if (debug) {
+        glUniform1i(isdebug, true);
         glEnableClientState(GL_COLOR_ARRAY);
-        std::vector<glm::vec3> color;
-        int vert_size = model._vertices.size();
-        for (std::vector<glm::vec3>::iterator it = model._vertices.begin(); it != model._vertices.end(); ++it) {
-            color.push_back(glm::vec3((rand() % vert_size) / static_cast<float>(vert_size),
-                                      (rand() % vert_size) / static_cast<float>(vert_size),
-                                      (rand() % vert_size) / static_cast<float>(vert_size)));
-        }
-        glColorPointer(3, GL_FLOAT, 0, &(color)[0]);        
-    }
-    glVertexPointer(3, GL_FLOAT, 0, &(model._vertices)[0]);
-    glNormalPointer(GL_FLOAT, 0, &(model._normals)[0]);
-    glDrawElements(GL_TRIANGLES, model._faces.size(), GL_UNSIGNED_INT, &(model._faces)[0]);  
-    if (debug) {
+        std::vector<glm::vec3> colors;
+        std::vector<glm::vec3> vertices;
+        std::vector<glm::vec3> normals;
+        model.debugVerts(&vertices);
+        model.debugVertColors(&colors);
+        model.debugNorms(&normals);
+        glColorPointer(3, GL_FLOAT, 0, &(colors)[0]);  
+        glVertexPointer(3, GL_FLOAT, 0, &(vertices)[0]);
+        glNormalPointer(GL_FLOAT, 0, &(normals)[0]);
+        glDrawArrays(GL_TRIANGLES, 0, vertices.size());
         glDisableClientState(GL_COLOR_ARRAY);
+    } else {
+        glVertexPointer(3, GL_FLOAT, 0, &(model._vertices)[0]);
+        glNormalPointer(GL_FLOAT, 0, &(model._normals)[0]);
+        glDrawElements(GL_TRIANGLES, model._faces.size(), GL_UNSIGNED_INT, &(model._faces)[0]);  
         
     }
     glDisableClientState(GL_VERTEX_ARRAY);

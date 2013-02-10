@@ -14,7 +14,9 @@ public:
     void loadMesh(const char * filename);
     void calcNorms();
     void normalizeVerts();
-    
+    void debugVerts(std::vector<glm::vec3>* vertex);
+    void debugNorms(std::vector<glm::vec3>* norms);
+    void debugVertColors(std::vector<glm::vec3>* colors);
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;

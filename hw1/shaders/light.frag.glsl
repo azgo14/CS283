@@ -11,6 +11,7 @@ varying vec3 mynormal ;
 varying vec4 myvertex ; 
 
 uniform int islight ; // are we lighting. 
+uniform int debug ;
 
 // Assume light 0 and light 1 are both point lights
 // The actual light values are passed from the main OpenGL program. 
@@ -45,7 +46,7 @@ vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in v
 
 void main (void) 
 {       
-    if (islight == 0) gl_FragColor = color ; 
+    if (islight == 0 || debug == 1) gl_FragColor = color ; 
     else { 
         // They eye is always at (0,0,0) looking down -z axis 
         // Also compute current fragment position and direction to eye 
