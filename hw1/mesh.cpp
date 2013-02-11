@@ -3,6 +3,7 @@
 #include <sstream>
 #include <stdlib.h>
 #include <set>
+#include <algorithm>
 
 #include "mesh.h"
 
@@ -123,6 +124,8 @@ void Mesh::loadMesh(const char * filename) {
             _normals[v1] += getNormal(_vertices[v1], _vertices[v2], _vertices[v3]);
             _normals[v2] += getNormal(_vertices[v1], _vertices[v2], _vertices[v3]);
             _normals[v3] += getNormal(_vertices[v1], _vertices[v2], _vertices[v3]);
+
+	    _face_normals.push_back(getNormal(_vertices[v1], _vertices[v2], _vertices[v3]));
             
             _vertex_to_faces[v1].push_back(i);
             _vertex_to_faces[v2].push_back(i);
@@ -135,6 +138,7 @@ void Mesh::loadMesh(const char * filename) {
     }
     calcNorms();
     normalizeVerts();
+    calcQuadrics();
 }
 
 void Mesh::normalizeVerts() {
@@ -308,5 +312,35 @@ void Mesh::collapse(int vert1, int vert2) {
                                       _normals[*it].y / static_cast<double>(_vertex_to_faces[*it].size()),
                                       _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
     }
+}
+
+void Mesh::calcQuadrics() {
+    for (int v = 0; v < _vertices.size(); ++v) {
+        calcQuadricMatrix(v);
+    }
+}
+
+glm::mat4 Mesh::calcQuadricMatrix(int vert) {
+    glm::mat4 Q(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+    for (std::vector<int>::iterator f_it = _vertex_to_faces[vert].begin(); f_it != _vertex_to_faces[vert].end(); ++f_it) {
+        glm::vec3 normal = _face_normals[*f_it];
+        glm::vec4 p(normal.x, normal.y, normal.z, -glm::dot(_vertices[vert], normal));
+	glm::mat4 K(p.x * p.x, p.x * p.y, p.x * p.z, p.x * p.w,
+		    p.y * p.x, p.y * p.y, p.y * p.z, p.y * p.w,
+		    p.z * p.x, p.z * p.y, p.z * p.z, p.z * p.w,
+		    p.w * p.x, p.w * p.y, p.w * p.z, p.w * p.w);
+        Q += K;
+    }
+    
+    return Q;
+}
+
+void Mesh::printMatrix(glm::mat4 matrix) {
+    for (int row = 0; row < 4; row++) {
+        for (int column = 0; column < 4; column++) {
+            std::cout << matrix[row][column] << ", ";
+        }
+    }
+    std::cout << "****\n";
 }
 
