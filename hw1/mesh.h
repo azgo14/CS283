@@ -27,7 +27,7 @@ public:
     std::vector<glm::vec3> _normals;
     std::vector<int> _faces;
     std::vector<glm::vec3> _face_normals;
-    std::vector<glm::vec4> _quadrics;
+    std::vector<glm::mat4> _quadrics;
 
 private:    
     std::map<int, std::vector<int> > _vertex_to_faces;  //vertex to list of adjacent faces

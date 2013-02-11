@@ -316,7 +316,7 @@ void Mesh::collapse(int vert1, int vert2) {
 
 void Mesh::calcQuadrics() {
     for (int v = 0; v < _vertices.size(); ++v) {
-        calcQuadricMatrix(v);
+        _quadrics.push_back(calcQuadricMatrix(v));
     }
 }
 
