@@ -4,6 +4,7 @@
 #include <GL/glut.h>
 #include <string>
 #include <vector>
+#include <set>
 #include <map>
 #include <glm/glm.hpp> // Replace with Transform.h if needed
 
@@ -22,12 +23,14 @@ public:
     void calcQuadrics();
     glm::mat4 calcQuadricMatrix(int vert);
     void printMatrix(glm::mat4 matrix); // for debugging purposes, remove when we're done
+    void getPairs();
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;
     std::vector<int> _faces;
     std::vector<glm::vec3> _face_normals;
     std::vector<glm::mat4> _quadrics;
+    std::set<std::pair<int, int> > _pairs;
 
 private:    
     std::map<int, std::vector<int> > _vertex_to_faces;  //vertex to list of adjacent faces

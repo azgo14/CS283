@@ -139,6 +139,7 @@ void Mesh::loadMesh(const char * filename) {
     calcNorms();
     normalizeVerts();
     calcQuadrics();
+    getPairs();
 }
 
 void Mesh::normalizeVerts() {
@@ -334,6 +335,34 @@ glm::mat4 Mesh::calcQuadricMatrix(int vert) {
     
     return Q;
 }
+
+
+void Mesh::getPairs() {
+    for (std::map<int, std::vector<int> >::iterator it = _vertex_to_faces.begin(); it != _vertex_to_faces.end(); ++it) {
+        int vertex = it->first;
+        for (std::vector<int>::iterator f_it = (it->second).begin(); f_it != (it->second).end(); ++f_it) {
+            int v1 = _faces[3*(*f_it)];
+	    int v2 = _faces[3*(*f_it)+1];
+            int v3 = _faces[3*(*f_it)+2];
+            std::pair<int, int> pair1, pair2;
+            if (vertex == v1) {
+                vertex < v2 ? pair1 = std::make_pair(vertex, v2) : pair1 = std::make_pair(v2, vertex);
+                vertex < v3 ? pair2 = std::make_pair(vertex, v3) : pair2 = std::make_pair(v3, vertex);
+            } else if (vertex == v2) {
+                vertex < v1 ? pair1 = std::make_pair(vertex, v1) : pair1 = std::make_pair(v1, vertex);
+                vertex < v3 ? pair2 = std::make_pair(vertex, v3) : pair2 = std::make_pair(v3, vertex);
+            } else if (vertex == v3) {
+                vertex < v1 ? pair1 = std::make_pair(vertex, v1) : pair1 = std::make_pair(v1, vertex);
+                vertex < v2 ? pair2 = std::make_pair(vertex, v2) : pair2 = std::make_pair(v2, vertex);
+            } else {
+                std::cout << "Error: Something went wrong...\n";
+                exit(1);
+            }
+            _pairs.insert(pair1);
+	    _pairs.insert(pair2);
+        }
+    }
+ }
 
 void Mesh::printMatrix(glm::mat4 matrix) {
     for (int row = 0; row < 4; row++) {
