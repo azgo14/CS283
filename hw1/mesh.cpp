@@ -3,9 +3,11 @@
 #include <sstream>
 #include <stdlib.h>
 #include <set>
-#include <algorithm>
-
 #include "mesh.h"
+
+bool comparePairs(std::pair<float, std::pair<int, int> > pair1, std::pair<float, std::pair<int, int> > pair2) {
+    return pair1.first > pair2.first;
+}
 
 namespace {
 
@@ -140,6 +142,14 @@ void Mesh::loadMesh(const char * filename) {
     normalizeVerts();
     calcQuadrics();
     getPairs();
+    quadricSimplify(1);
+    /*
+    for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
+        std::pair<float, std::pair<int, int> >p = *it;
+        std::cout << p.first << ", (" << p.second.first << ", " << p.second.second << ")\n";
+    }
+    std::cout << "********\n";
+    */
 }
 
 void Mesh::normalizeVerts() {
@@ -220,7 +230,7 @@ void Mesh::collapse(int vert1, int vert2) {
     if (!hasEdge(vert1, vert2)) {
         return;
     }
-    std::cout<<"here"<<std::endl;
+    //std::cout<<"here"<<std::endl;
     glm::vec3 vertex1 = _vertices[vert1];
     glm::vec3 vertex2 = _vertices[vert2];
     glm::vec3 new_vert(.5 * (vertex1.x + vertex2.x), .5 * (vertex1.y + vertex2.y), .5 * (vertex1.z + vertex2.z));
@@ -338,6 +348,7 @@ glm::mat4 Mesh::calcQuadricMatrix(int vert) {
 
 
 void Mesh::getPairs() {
+    std::set<std::pair<int, int> > pairs;
     for (std::map<int, std::vector<int> >::iterator it = _vertex_to_faces.begin(); it != _vertex_to_faces.end(); ++it) {
         int vertex = it->first;
         for (std::vector<int>::iterator f_it = (it->second).begin(); f_it != (it->second).end(); ++f_it) {
@@ -358,11 +369,53 @@ void Mesh::getPairs() {
                 std::cout << "Error: Something went wrong...\n";
                 exit(1);
             }
-            _pairs.insert(pair1);
-	    _pairs.insert(pair2);
+            pairs.insert(pair1);
+            pairs.insert(pair2);
         }
     }
+    for (std::set<std::pair<int, int> >::iterator p_it = pairs.begin(); p_it != pairs.end(); ++p_it) {
+        _pairs.push_back(std::make_pair(calcError(*p_it), *p_it));
+    }
  }
+
+float Mesh::calcError(std::pair<int, int> pair) {
+    glm::vec3 contracted_pair = _vertices[pair.first] + _vertices[pair.second];
+    contracted_pair *= 0.5;
+    glm::mat4 Q = _quadrics[pair.first] + _quadrics[pair.second];
+    glm::vec4 v(contracted_pair.x, contracted_pair.y, contracted_pair.z, 1);
+    return glm::dot(v, v * Q);
+}
+
+void Mesh::quadricSimplify(int times) {
+    std::make_heap(_pairs.begin(), _pairs.end(), comparePairs);
+    std::pair<int, int> pair, p, p_new;
+    for (int i = 0; i < times; ++i) {
+        // remove the pair (u, v) of least cost from the heap
+        pair = _pairs.front().second;
+        std::pop_heap(_pairs.begin(), _pairs.end());
+        _pairs.pop_back();
+        // contract the pair (u, v)
+        collapse(pair.first, pair.second);
+        // update the costs of all valid pairs involving u
+        for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
+            p = it->second;
+            if (pair.first == p.first) {
+                _pairs.erase(it);
+                // recalcuate, _pairs.push_back, push_heap
+                _quadrics[p.first] += _quadrics[p.second];
+                p_new = std::make_pair(pair.first, p.second);
+                _pairs.push_back(std::make_pair(calcError(p_new), p_new));
+                std::push_heap(_pairs.begin(), _pairs.end());
+            } else if (pair.first == p.second) {
+                _pairs.erase(it);
+                _quadrics[p.second] += _quadrics[p.first];
+                p_new = std::make_pair(p.first, pair.first);
+                _pairs.push_back(std::make_pair(calcError(p_new), p_new));
+                std::push_heap(_pairs.begin(), _pairs.end());
+            }
+        }
+    }
+}
 
 void Mesh::printMatrix(glm::mat4 matrix) {
     for (int row = 0; row < 4; row++) {

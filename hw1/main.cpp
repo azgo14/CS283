@@ -204,8 +204,8 @@ void init(const char* filename) {
 	shininess = glGetUniformLocation(shaderprogram,"shininess");     
 	
 	std::cout << "Loading in file: " << filename << std::endl;
-    model.loadMesh(filename);
-    std::cout << "Done loading" << std::endl;  
+        model.loadMesh(filename);
+        std::cout << "Done loading" << std::endl;  
 }
 
 void display() {
@@ -251,7 +251,6 @@ void display() {
     
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
-    model.collapse(0,1);
     if (debug) {
         glUniform1i(isdebug, true);
         glEnableClientState(GL_COLOR_ARRAY);
