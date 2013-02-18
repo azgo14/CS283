@@ -142,7 +142,6 @@ void Mesh::loadMesh(const char * filename) {
     normalizeVerts();
     calcQuadrics();
     getPairs();
-    quadricSimplify(1);
     /*
     for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
         std::pair<float, std::pair<int, int> >p = *it;
@@ -396,12 +395,12 @@ void Mesh::quadricSimplify(int times) {
         _pairs.pop_back();
         // contract the pair (u, v)
         collapse(pair.first, pair.second);
-        // update the costs of all valid pairs involving u
+        // update the costs of all valid pairs involving u and v
         for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
             p = it->second;
+            // update pairs involving u
             if (pair.first == p.first) {
                 _pairs.erase(it);
-                // recalcuate, _pairs.push_back, push_heap
                 _quadrics[p.first] += _quadrics[p.second];
                 p_new = std::make_pair(pair.first, p.second);
                 _pairs.push_back(std::make_pair(calcError(p_new), p_new));
@@ -410,6 +409,20 @@ void Mesh::quadricSimplify(int times) {
                 _pairs.erase(it);
                 _quadrics[p.second] += _quadrics[p.first];
                 p_new = std::make_pair(p.first, pair.first);
+                _pairs.push_back(std::make_pair(calcError(p_new), p_new));
+                std::push_heap(_pairs.begin(), _pairs.end());
+            }
+            // update pairs involving v
+            if (pair.second == p.first) {
+                _pairs.erase(it);
+                _quadrics[p.first] += _quadrics[p.second];
+                p_new = std::make_pair(pair.second, p.second);
+                _pairs.push_back(std::make_pair(calcError(p_new), p_new));
+                std::push_heap(_pairs.begin(), _pairs.end());
+            } else if (pair.second == p.second) {
+                _pairs.erase(it);
+                _quadrics[p.second] += _quadrics[p.first];
+                p_new = std::make_pair(p.first, pair.second);
                 _pairs.push_back(std::make_pair(calcError(p_new), p_new));
                 std::push_heap(_pairs.begin(), _pairs.end());
             }

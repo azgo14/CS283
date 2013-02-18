@@ -91,6 +91,7 @@ void printHelp() {
 		<< "press 'g' to switch between using glm::lookAt or your own LookAt.\n"     
 		<< "press 'r' to reset the transformation (eye and up).\n"
 		<< "press 'z' to zoom in. 'x' to zoom out.\n"
+                << "enter a number to specify how many faces the simplified model should have.\n"
 		<< "press ESC to quit.\n\n";  
 
 }
@@ -108,29 +109,29 @@ void reshape(int width,int height){
 
 
 void keyboard(unsigned char key,int x,int y) {
-	switch(key) {
-		case '+':
-			amount++;
-			std::cout << "amount set to " << amount << "\n";
-			break;
-		case '-':
-			amount--;
-			std::cout << "amount set to " << amount << "\n"; 
-			break;
-		case 'g':
-			useGlu = !useGlu;
-			std::cout << "Using glm::LookAt set to: " 
-				<< (useGlu ? " true " : " false ") << "\n"; 
-			break;
-		case 'h':
-			printHelp();
-			break;
-		case 27:  // Escape to quit
-			exit(0);
-			break;
-		case 'r': // reset eye and up vectors 
-			eye = eyeinit; 
-			up = upinit; 
+    switch(key) {
+        case '+':
+	    amount++;
+            std::cout << "amount set to " << amount << "\n";
+	    break;
+	case '-':
+	    amount--;
+	    std::cout << "amount set to " << amount << "\n"; 
+	    break;
+	case 'g':
+	    useGlu = !useGlu;
+	    std::cout << "Using glm::LookAt set to: " 
+		      << (useGlu ? " true " : " false ") << "\n"; 
+	    break;
+	case 'h':
+            printHelp();
+	    break;
+	case 27:  // Escape to quit
+            exit(0);
+	    break;
+	case 'r': // reset eye and up vectors 
+	    eye = eyeinit; 
+	    up = upinit; 
             break;
         case 'z':
             fovy -= amount;
@@ -146,8 +147,9 @@ void keyboard(unsigned char key,int x,int y) {
         case 'w':
             wireframe = !wireframe;
             break;
-	}
-	glutPostRedisplay();
+        break;
+    }
+    glutPostRedisplay();
 }
 
 //  You will need to enter code for the arrow keys 
@@ -172,7 +174,7 @@ void specialKey(int key,int x,int y) {
 }
 
 
-void init(const char* filename) {
+void init(const char* filename, int times) {
 
 	// Set up initial position for eye,up and amount
 	// As well as booleans 
@@ -193,7 +195,7 @@ void init(const char* filename) {
 	fragmentshader = initshaders(GL_FRAGMENT_SHADER,"shaders/light.frag.glsl");
 	shaderprogram = initprogram(vertexshader,fragmentshader); 
 	islight = glGetUniformLocation(shaderprogram,"islight"); 
-    isdebug = glGetUniformLocation(shaderprogram, "debug");     
+        isdebug = glGetUniformLocation(shaderprogram, "debug");     
 	light0posn = glGetUniformLocation(shaderprogram,"light0posn");       
 	light0color = glGetUniformLocation(shaderprogram,"light0color");       
 	light1posn = glGetUniformLocation(shaderprogram,"light1posn");       
@@ -203,50 +205,50 @@ void init(const char* filename) {
 	specular = glGetUniformLocation(shaderprogram,"specular");       
 	shininess = glGetUniformLocation(shaderprogram,"shininess");     
 	
-	std::cout << "Loading in file: " << filename << std::endl;
+	std::cout << "Loading file..." << filename << std::endl;
         model.loadMesh(filename);
-        std::cout << "Done loading" << std::endl;  
+        model.quadricSimplify(times);
+        std::cout << "Model loaded." << std::endl;
 }
 
 void display() {
-	glClearColor(0,0,1,0);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClearColor(0,0,1,0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     if (wireframe) {
         glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
     } else {
         glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
     }
+    glMatrixMode(GL_MODELVIEW);
+    mat4 mv; 
+    const vec3 center(0.0,0.0,0.0); 
 
-	glMatrixMode(GL_MODELVIEW);
-	mat4 mv; 
-	const vec3 center(0.0,0.0,0.0); 
+    if (useGlu) mv = glm::lookAt(eye,center,up); 
+    else {
+        mv = Transform::lookAt(eye,up); 
+        mv = glm::transpose(mv); // accounting for row major
+    }
+    glLoadMatrixf(&mv[0][0]); 
 
-	if (useGlu) mv = glm::lookAt(eye,center,up); 
-	else {
-		mv = Transform::lookAt(eye,up); 
-		mv = glm::transpose(mv); // accounting for row major
-	}
-	glLoadMatrixf(&mv[0][0]); 
+    // Set Light and Material properties for the teapot
+    // Lights are transformed by current modelview matrix. 
+    // The shader can't do this globally. 
+    // So we need to do so manually.  
+    transformvec(light_position,light0); 
+    transformvec(light_position1,light1); 
 
-	// Set Light and Material properties for the teapot
-	// Lights are transformed by current modelview matrix. 
-	// The shader can't do this globally. 
-	// So we need to do so manually.  
-	transformvec(light_position,light0); 
-	transformvec(light_position1,light1); 
+    glUniform4fv(light0posn,1,light0); 
+    glUniform4fv(light0color,1,light_specular); 
+    glUniform4fv(light1posn,1,light1); 
+    glUniform4fv(light1color,1,light_specular1); 
 
-	glUniform4fv(light0posn,1,light0); 
-	glUniform4fv(light0color,1,light_specular); 
-	glUniform4fv(light1posn,1,light1); 
-	glUniform4fv(light1color,1,light_specular1); 
-
-	//glUniform4fv(ambient,1,small); 
-	//glUniform4fv(diffuse,1,medium); 
-	glUniform4fv(ambient,1,small); 
-	glUniform4fv(diffuse,1,small); 
-	glUniform4fv(specular,1,one); 
-	glUniform1fv(shininess,1,high); 
-	glUniform1i(islight,true);
+    //glUniform4fv(ambient,1,small); 
+    //glUniform4fv(diffuse,1,medium); 
+    glUniform4fv(ambient,1,small); 
+    glUniform4fv(diffuse,1,small); 
+    glUniform4fv(specular,1,one); 
+    glUniform1fv(shininess,1,high); 
+    glUniform1i(islight,true);
     glUniform1i(isdebug, false);
     
     glEnableClientState(GL_VERTEX_ARRAY);
@@ -274,13 +276,13 @@ void display() {
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     
-	glutSwapBuffers();
+    glutSwapBuffers();
 }
 
 int main(int argc,char* argv[]) {
 	
-	if(argc != 2) {
-        std::cerr << "I only want one argument that is the path to the OFF file" << std::endl;
+	if(argc != 3) {
+        std::cerr << "Usage: path to the OFF file, number of times to simplify" << std::endl;
         throw 2;
     }
     printHelp();
@@ -290,7 +292,7 @@ int main(int argc,char* argv[]) {
 	glutInit(&argc,argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
 	glutCreateWindow("HW1: Transformations");
-	init(argv[1]);
+	init(argv[1], atoi(argv[2]));
 	glutDisplayFunc(display);
 	glutSpecialFunc(specialKey);
 	glutKeyboardFunc(keyboard);
