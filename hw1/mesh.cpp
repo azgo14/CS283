@@ -16,7 +16,7 @@ glm::vec3 getNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) {
 }
 } // namespace
 
-void Mesh::loadMesh(const char * filename) {
+void Mesh::loadMesh(const char * filename, int simplify_num) {
     std::string str = ""; 
     std::ifstream in; 
     int num_vertices;
@@ -142,7 +142,7 @@ void Mesh::loadMesh(const char * filename) {
     normalizeVerts();
     calcQuadrics();
     getPairs();
-    quadricSimplify(1);
+    quadricSimplify(simplify_num);
     /*
     for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
         std::pair<float, std::pair<int, int> >p = *it;
@@ -226,15 +226,14 @@ bool Mesh::hasEdge(int vert1, int vert2) {
     return false;
 }    
 
-void Mesh::collapse(int vert1, int vert2) {
+bool Mesh::collapse(int vert1, int vert2) {
     if (!hasEdge(vert1, vert2)) {
-        return;
+        std::cerr << "Warning has no edge in between" << std::endl;
+        return false;
     }
-    //std::cout<<"here"<<std::endl;
     glm::vec3 vertex1 = _vertices[vert1];
     glm::vec3 vertex2 = _vertices[vert2];
     glm::vec3 new_vert(.5 * (vertex1.x + vertex2.x), .5 * (vertex1.y + vertex2.y), .5 * (vertex1.z + vertex2.z));
-    
     _vertices[vert1] = new_vert;  // index of vert1 is now the new vert. update vert_face_adjacency to reflect this
     _vertices[vert2] = glm::vec3(10000,10000,10000);  // just junk data to placehold
     
@@ -255,7 +254,6 @@ void Mesh::collapse(int vert1, int vert2) {
         }
     }
     _vertex_to_faces.erase(vert2); // cleanup
-    
 
     // remove degenerate faces
     std::set<int> degenerate_faces;
@@ -296,10 +294,13 @@ void Mesh::collapse(int vert1, int vert2) {
                 _vertex_to_faces[*temp_it].erase(location);  // delete degenerate face in vertex to faces
                 location = std::find(_vertex_to_faces[*temp_it].begin(), _vertex_to_faces[*temp_it].end(), *v_it);
             }
+            if (_vertex_to_faces[*temp_it].size() == 0) {
+                _vertex_to_faces.erase(*temp_it);     
+            }
         }    
-        _faces[3*(*v_it)] = 0; // need a placeholder so indices are the same. nothing will point to this face index (i hope)
-        _faces[3*(*v_it)+1] = 0;
-        _faces[3*(*v_it)+2] = 0;
+        _faces[3*(*v_it)] = 1000000; // need a placeholder so indices are the same. nothing will point to this face index (i hope)
+        _faces[3*(*v_it)+1] = 1000000;
+        _faces[3*(*v_it)+2] = 1000000;
     }
                  
     // calculate normal at vert1
@@ -323,6 +324,7 @@ void Mesh::collapse(int vert1, int vert2) {
                                       _normals[*it].y / static_cast<double>(_vertex_to_faces[*it].size()),
                                       _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
     }
+    return true;
 }
 
 void Mesh::calcQuadrics() {
@@ -336,10 +338,10 @@ glm::mat4 Mesh::calcQuadricMatrix(int vert) {
     for (std::vector<int>::iterator f_it = _vertex_to_faces[vert].begin(); f_it != _vertex_to_faces[vert].end(); ++f_it) {
         glm::vec3 normal = _face_normals[*f_it];
         glm::vec4 p(normal.x, normal.y, normal.z, -glm::dot(_vertices[vert], normal));
-	glm::mat4 K(p.x * p.x, p.x * p.y, p.x * p.z, p.x * p.w,
-		    p.y * p.x, p.y * p.y, p.y * p.z, p.y * p.w,
-		    p.z * p.x, p.z * p.y, p.z * p.z, p.z * p.w,
-		    p.w * p.x, p.w * p.y, p.w * p.z, p.w * p.w);
+        glm::mat4 K(p.x * p.x, p.x * p.y, p.x * p.z, p.x * p.w,
+		            p.y * p.x, p.y * p.y, p.y * p.z, p.y * p.w,
+		            p.z * p.x, p.z * p.y, p.z * p.z, p.z * p.w,
+		            p.w * p.x, p.w * p.y, p.w * p.z, p.w * p.w);
         Q += K;
     }
     
@@ -353,7 +355,7 @@ void Mesh::getPairs() {
         int vertex = it->first;
         for (std::vector<int>::iterator f_it = (it->second).begin(); f_it != (it->second).end(); ++f_it) {
             int v1 = _faces[3*(*f_it)];
-	    int v2 = _faces[3*(*f_it)+1];
+	        int v2 = _faces[3*(*f_it)+1];
             int v3 = _faces[3*(*f_it)+2];
             std::pair<int, int> pair1, pair2;
             if (vertex == v1) {
@@ -379,6 +381,12 @@ void Mesh::getPairs() {
  }
 
 float Mesh::calcError(std::pair<int, int> pair) {
+    if ( _vertices[pair.first].x > 100) {
+        std::cout <<"FICL"<<std::endl;
+    }
+    if ( _vertices[pair.second].x > 100) {
+        std::cout <<"FICL"<<std::endl;
+    }
     glm::vec3 contracted_pair = _vertices[pair.first] + _vertices[pair.second];
     contracted_pair *= 0.5;
     glm::mat4 Q = _quadrics[pair.first] + _quadrics[pair.second];
@@ -387,33 +395,59 @@ float Mesh::calcError(std::pair<int, int> pair) {
 }
 
 void Mesh::quadricSimplify(int times) {
-    std::make_heap(_pairs.begin(), _pairs.end(), comparePairs);
-    std::pair<int, int> pair, p, p_new;
+    std::pair<int, int> pair, p;
+    std::cout << "size: " << _pairs.size() << std::endl;
     for (int i = 0; i < times; ++i) {
+        std::cout << "Currently " << i << " iteration" << std::endl;
+
+        if (_pairs.size() == 0) {
+            std::cout << "No more iterations left" << std::endl;
+            return;
+        }
+        std::make_heap(_pairs.begin(), _pairs.end(), comparePairs);
+        
         // remove the pair (u, v) of least cost from the heap
         pair = _pairs.front().second;
         std::pop_heap(_pairs.begin(), _pairs.end());
         _pairs.pop_back();
+
+        if (_vertex_to_faces.find(pair.first) == _vertex_to_faces.end() || _vertex_to_faces.find(pair.second) == _vertex_to_faces.end()) {
+            --i;
+            continue;
+        }
+        
+        std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
         // contract the pair (u, v)
-        collapse(pair.first, pair.second);
-        // update the costs of all valid pairs involving u
-        for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
+        bool complete = collapse(pair.first, pair.second);
+
+        _quadrics[pair.first] += _quadrics[pair.second];  // only do this for u v
+        
+        // update the costs of all valid pairs involving u and v (converting those involving v to be involving with u). ASSUMPTION: there is no (u,v) pair anymore
+        std::set<std::pair<int, int> > to_add;            
+        for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ) {
             p = it->second;
-            if (pair.first == p.first) {
-                _pairs.erase(it);
-                // recalcuate, _pairs.push_back, push_heap
-                _quadrics[p.first] += _quadrics[p.second];
-                p_new = std::make_pair(pair.first, p.second);
-                _pairs.push_back(std::make_pair(calcError(p_new), p_new));
-                std::push_heap(_pairs.begin(), _pairs.end());
-            } else if (pair.first == p.second) {
-                _pairs.erase(it);
-                _quadrics[p.second] += _quadrics[p.first];
-                p_new = std::make_pair(p.first, pair.first);
-                _pairs.push_back(std::make_pair(calcError(p_new), p_new));
-                std::push_heap(_pairs.begin(), _pairs.end());
+            if (pair.first == p.first || pair.second == p.first) {                
+                it = _pairs.erase(it);
+                to_add.insert(std::make_pair(pair.first, p.second));
+            } else if (pair.first == p.second) {                
+                it = _pairs.erase(it);
+                to_add.insert(std::make_pair(p.first, pair.first));
+            } else if (pair.second == p.second) {                
+                it = _pairs.erase(it);
+                if (pair.first < p.first) {
+                    to_add.insert(std::make_pair(pair.first, p.first));
+                } else {
+                    to_add.insert(std::make_pair(p.first, pair.first));
+                }
+            } else {                
+                ++it;
             }
         }
+        
+        // never make changes to datastructure while your iterating through datastructure
+        for (std::set<std::pair<int, int> >::iterator to_add_it = to_add.begin(); to_add_it != to_add.end(); ++to_add_it) {
+            _pairs.push_back(std::make_pair(calcError(*to_add_it), *to_add_it));
+        }   
     }
 }
 
