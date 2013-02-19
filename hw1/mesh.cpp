@@ -298,9 +298,9 @@ bool Mesh::collapse(int vert1, int vert2) {
                 _vertex_to_faces.erase(*temp_it);     
             }
         }    
-        _faces[3*(*v_it)] = 1000000; // need a placeholder so indices are the same. nothing will point to this face index (i hope)
-        _faces[3*(*v_it)+1] = 1000000;
-        _faces[3*(*v_it)+2] = 1000000;
+        _faces[3*(*v_it)] = 0; // need a placeholder so indices are the same. nothing will point to this face index (i hope)
+        _faces[3*(*v_it)+1] = 0;
+        _faces[3*(*v_it)+2] = 0;
     }
                  
     // calculate normal at vert1
