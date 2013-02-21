@@ -16,7 +16,7 @@ glm::vec3 getNormal(glm::vec3 v1, glm::vec3 v2, glm::vec3 v3) {
 }
 } // namespace
 
-void Mesh::loadMesh(const char * filename, int simplify_num) {
+void Mesh::loadMesh(const char * filename) {
     std::string str = ""; 
     std::ifstream in; 
     int num_vertices;
@@ -140,9 +140,6 @@ void Mesh::loadMesh(const char * filename, int simplify_num) {
     }
     calcNorms();
     normalizeVerts();
-    calcQuadrics();
-    getPairs();
-    quadricSimplify(simplify_num);
     /*
     for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
         std::pair<float, std::pair<int, int> >p = *it;
@@ -315,11 +312,11 @@ bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
             degenerate_faces.insert(*v_it);
         }
     }
-    degenerate_output << "face" << std::endl;
+    degenerate_output << "Face" << std::endl;
     for (std::set<int>::iterator v_it = degenerate_faces.begin(); v_it != degenerate_faces.end(); ++v_it) {    
         degenerate_output << *v_it << " " << _faces[3*(*v_it)] << " " << _faces[3*(*v_it)+1] << " " << _faces[3*(*v_it) + 2] << std::endl;
     }
-    degenerate_output << "vert_to_face" << std::endl;
+    degenerate_output << "Vert_to_face" << std::endl;
     // remove face index from _vertex_to_faces
     for (std::set<int>::iterator v_it = degenerate_faces.begin(); v_it != degenerate_faces.end(); ++v_it) {    
         std::set<int> temp_v;
@@ -447,6 +444,8 @@ float Mesh::calcError(std::pair<int, int> pair) {
 }
 
 void Mesh::quadricSimplify(int simplify_num) {
+    calcQuadrics();
+    getPairs();
     std::ofstream edge_output("edge_collapse.txt");
     std::pair<int, int> pair, p;
     std::cout << "size: " << _pairs.size() << std::endl;

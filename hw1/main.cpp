@@ -208,7 +208,8 @@ void init(const char* filename) {
 	shininess = glGetUniformLocation(shaderprogram,"shininess");     
 	
 	std::cout << "Loading in file: " << filename << std::endl;
-    model.loadMesh(filename, simplify_num);
+    model.loadMesh(filename);
+    model.quadricSimplify(simplify_num);
     std::cout << "Done loading" << std::endl;  
 }
 

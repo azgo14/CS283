@@ -8,11 +8,22 @@
 #include <algorithm>
 #include <glm/glm.hpp> // Replace with Transform.h if needed
 
+struct EdgeCollapse {
+    std::pair<int, glm::vec3> v1;  // (index, vector)
+    std::pair<int, glm::vec3> v2;
+    std::pair<int, glm::vec3> v;
+    std::vector<int> v1_faces;
+    std::vector<int> v2_faces;
+    std::vector<int> v_faces;
+    std::vector<std::pair<int, glm::vec3> > d_faces; // (degenerate face index, vertex indices of face)
+    std::vector<std::pair<int, std::vector<int> > > vert_to_del_faces; // (vertex index, list of degenerate faces deleted in _vertex_to_faces[vertex index])
+} ;
+
 class Mesh {
 public:
     Mesh(void) {};
   
-    void loadMesh(const char * filename, int simplify_num);
+    void loadMesh(const char * filename);
     void calcNorms();
     void normalizeVerts();
     void debugVerts(std::vector<glm::vec3>* vertex);
@@ -25,7 +36,7 @@ public:
     void printMatrix(glm::mat4 matrix); // for debugging purposes, remove when we're done
     void getPairs();
     float calcError(std::pair<int, int> pair);
-    void quadricSimplify(int times);
+    void quadricSimplify(int simplify_num);
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;
