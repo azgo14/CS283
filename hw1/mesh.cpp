@@ -226,16 +226,41 @@ bool Mesh::hasEdge(int vert1, int vert2) {
     return false;
 }    
 
-bool Mesh::collapse(int vert1, int vert2) {
+bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
     if (!hasEdge(vert1, vert2)) {
         std::cerr << "Warning has no edge in between" << std::endl;
         return false;
     }
+    std::stringstream old_output (std::stringstream::in | std::stringstream::out);
+    std::stringstream new_output (std::stringstream::in | std::stringstream::out);
+    std::stringstream degenerate_output (std::stringstream::in | std::stringstream::out);
+    
+    (*edge_output) << "Collapse" << std::endl;
+    old_output << vert1 << " " << _vertices[vert1].x << " " << _vertices[vert1].y << " " << _vertices[vert1].z << std::endl;
+    old_output << vert2 << " " << _vertices[vert2].x << " " << _vertices[vert2].y << " " << _vertices[vert2].z << std::endl;
+    
     glm::vec3 vertex1 = _vertices[vert1];
     glm::vec3 vertex2 = _vertices[vert2];
     glm::vec3 new_vert(.5 * (vertex1.x + vertex2.x), .5 * (vertex1.y + vertex2.y), .5 * (vertex1.z + vertex2.z));
+    
+    new_output << vert1 << " " << new_vert.x << " " << new_vert.y << " " << new_vert.z << std::endl;
+    
     _vertices[vert1] = new_vert;  // index of vert1 is now the new vert. update vert_face_adjacency to reflect this
     _vertices[vert2] = glm::vec3(10000,10000,10000);  // just junk data to placehold
+    
+    // output what was originally there for both
+    old_output << vert1;
+    for (std::vector<int>::iterator v1_it = _vertex_to_faces[vert1].begin();
+         v1_it != _vertex_to_faces[vert1].end(); ++v1_it) {
+        old_output << " " << *v1_it;
+    }
+    old_output << std::endl;
+    old_output << vert2;
+    for (std::vector<int>::iterator v2_it = _vertex_to_faces[vert2].begin();
+         v2_it != _vertex_to_faces[vert2].end(); ++v2_it) {
+        old_output << " " << *v2_it;   
+    }
+    old_output << std::endl;
     
     // change all occurrences of v1 and v2 with new v
     for (std::vector<int>::iterator v2_it = _vertex_to_faces[vert2].begin();
@@ -254,6 +279,14 @@ bool Mesh::collapse(int vert1, int vert2) {
         }
     }
     _vertex_to_faces.erase(vert2); // cleanup
+
+    // output what the change in vertex_to_face was for v1
+    new_output << vert1;
+    for (std::vector<int>::iterator v1_it = _vertex_to_faces[vert1].begin();
+         v1_it != _vertex_to_faces[vert1].end(); ++v1_it) {
+        new_output << " " << *v1_it;
+    }
+    new_output << std::endl;
 
     // remove degenerate faces
     std::set<int> degenerate_faces;
@@ -282,7 +315,12 @@ bool Mesh::collapse(int vert1, int vert2) {
             degenerate_faces.insert(*v_it);
         }
     }
-    
+    degenerate_output << "face" << std::endl;
+    for (std::set<int>::iterator v_it = degenerate_faces.begin(); v_it != degenerate_faces.end(); ++v_it) {    
+        degenerate_output << *v_it << " " << _faces[3*(*v_it)] << " " << _faces[3*(*v_it)+1] << " " << _faces[3*(*v_it) + 2] << std::endl;
+    }
+    degenerate_output << "vert_to_face" << std::endl;
+    // remove face index from _vertex_to_faces
     for (std::set<int>::iterator v_it = degenerate_faces.begin(); v_it != degenerate_faces.end(); ++v_it) {    
         std::set<int> temp_v;
         temp_v.insert(_faces[3*(*v_it)]);
@@ -290,10 +328,13 @@ bool Mesh::collapse(int vert1, int vert2) {
         temp_v.insert(_faces[3*(*v_it)+2]);
         for (std::set<int>::iterator temp_it = temp_v.begin(); temp_it != temp_v.end(); ++temp_it) {                
             std::vector<int>::iterator location = std::find(_vertex_to_faces[*temp_it].begin(), _vertex_to_faces[*temp_it].end(), *v_it);
+            degenerate_output << *temp_it;
             while (location != _vertex_to_faces[*temp_it].end()) {
+                degenerate_output << " " << *location;
                 _vertex_to_faces[*temp_it].erase(location);  // delete degenerate face in vertex to faces
                 location = std::find(_vertex_to_faces[*temp_it].begin(), _vertex_to_faces[*temp_it].end(), *v_it);
             }
+            degenerate_output << std::endl;
             if (_vertex_to_faces[*temp_it].size() == 0) {
                 _vertex_to_faces.erase(*temp_it);     
             }
@@ -324,6 +365,17 @@ bool Mesh::collapse(int vert1, int vert2) {
                                       _normals[*it].y / static_cast<double>(_vertex_to_faces[*it].size()),
                                       _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
     }
+    std::string s_old_output = old_output.str();
+    std::string s_new_output = new_output.str();
+    std::string s_degenerate_output = degenerate_output.str();
+
+    (*edge_output) << "Old" << std::endl;
+    (*edge_output) << s_old_output;
+    (*edge_output) << "New" << std::endl;
+    (*edge_output) << s_new_output;
+    (*edge_output) << "Degenerate" << std::endl;
+    (*edge_output) << s_degenerate_output;
+    
     return true;
 }
 
@@ -394,10 +446,11 @@ float Mesh::calcError(std::pair<int, int> pair) {
     return glm::dot(v, v * Q);
 }
 
-void Mesh::quadricSimplify(int times) {
+void Mesh::quadricSimplify(int simplify_num) {
+    std::ofstream edge_output("edge_collapse.txt");
     std::pair<int, int> pair, p;
     std::cout << "size: " << _pairs.size() << std::endl;
-    for (int i = 0; i < times; ++i) {
+    for (int i = 0; i < simplify_num; ++i) {
         std::cout << "Currently " << i << " iteration" << std::endl;
 
         if (_pairs.size() == 0) {
@@ -418,7 +471,7 @@ void Mesh::quadricSimplify(int times) {
         
         std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
         // contract the pair (u, v)
-        bool complete = collapse(pair.first, pair.second);
+        bool complete = collapse(pair.first, pair.second, &edge_output);
 
         _quadrics[pair.first] += _quadrics[pair.second];  // only do this for u v
         

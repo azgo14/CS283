@@ -18,7 +18,7 @@ public:
     void debugVerts(std::vector<glm::vec3>* vertex);
     void debugNorms(std::vector<glm::vec3>* norms);
     void debugVertColors(std::vector<glm::vec3>* colors);
-    bool collapse(int vert1, int vert2);
+    bool collapse(int vert1, int vert2, std::ofstream* output);
     bool hasEdge(int vert1, int vert2);
     void calcQuadrics();
     glm::mat4 calcQuadricMatrix(int vert);
