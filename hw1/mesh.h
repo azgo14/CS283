@@ -7,6 +7,7 @@
 #include <map>
 #include <algorithm>
 #include <glm/glm.hpp> // Replace with Transform.h if needed
+#include <stack>
 
 struct EdgeCollapse {
     std::pair<int, glm::vec3> v1;  // (index, vector)
@@ -24,6 +25,7 @@ public:
     Mesh(void) {};
   
     void loadMesh(const char * filename);
+    void loadEdgeCollapse(const char * filename);
     void calcNorms();
     void normalizeVerts();
     void debugVerts(std::vector<glm::vec3>* vertex);
@@ -48,6 +50,8 @@ public:
 private:    
     std::map<int, std::vector<int> > _vertex_to_faces;  //vertex to list of adjacent faces
 
+    std::stack<EdgeCollapse> _to_collapse;
+    std::stack<EdgeCollapse> _to_split;
 };
 
 #endif

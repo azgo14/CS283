@@ -210,6 +210,7 @@ void init(const char* filename) {
 	std::cout << "Loading in file: " << filename << std::endl;
     model.loadMesh(filename);
     model.quadricSimplify(simplify_num);
+    model.loadEdgeCollapse("edge_collapse.txt");
     std::cout << "Done loading" << std::endl;  
 }
 

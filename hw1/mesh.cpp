@@ -149,6 +149,164 @@ void Mesh::loadMesh(const char * filename) {
     */
 }
 
+namespace {
+    void split_string(const std::string& str, char delimiter, std::vector<std::string>* parts) {
+        parts->clear();
+        std::string temp;
+        std::stringstream s_str (str);
+        while(std::getline(s_str, temp, delimiter)) {
+            parts->push_back(temp);
+        }
+    }
+}
+
+// struct EdgeCollapse {
+//     std::pair<int, glm::vec3> v1;  // (index, vector)
+//     std::pair<int, glm::vec3> v2;
+//     std::pair<int, glm::vec3> v;
+//     std::vector<int> v1_faces;
+//     std::vector<int> v2_faces;
+//     std::vector<int> v_faces;
+//     std::vector<std::pair<int, glm::vec3> > d_faces; // (degenerate face index, vertex indices of face)
+//     std::vector<std::pair<int, std::vector<int> > > vert_to_del_faces; // (vertex index, list of degenerate faces deleted in _vertex_to_faces[vertex index])
+// } ;
+
+
+void Mesh::loadEdgeCollapse(const char* filename) {
+    std::string str = ""; 
+    std::ifstream in; 
+    
+    in.open(filename);
+    if (in.is_open()) {
+    	while(std::getline (in, str)) {
+    	    if (str != "Collapse") {
+    	        std::cerr << "Line not 'Collapse'" << std::endl;
+                throw 2;
+    	    }
+            EdgeCollapse collapse;
+            std::getline (in, str);
+    	    if (str != "Old") {
+    	        std::cerr << "Line not 'Old'" << std::endl;
+                throw 2;
+    	    }
+    	    // Old
+    	    std::getline (in, str);
+            std::vector<std::string> parts;
+            split_string(str, ' ', &parts);
+            if (parts.size() != 4) {                
+                std::cerr << "v1 size not 4" << std::endl;
+                throw 2;
+            }
+            collapse.v1 = std::make_pair(atoi(parts[0].c_str()), glm::vec3(atof(parts[1].c_str()), atof(parts[2].c_str()), atof(parts[3].c_str())));
+            //----
+            std::getline (in, str);
+            split_string(str, ' ', &parts);
+            if (parts.size() != 4) {
+                std::cerr << "v2 size not 4" << std::endl;
+                throw 2;
+            }
+            collapse.v2 = std::make_pair(atoi(parts[0].c_str()), glm::vec3(atof(parts[1].c_str()), atof(parts[2].c_str()), atof(parts[3].c_str())));
+            //----
+            std::getline (in, str);
+            split_string(str, ' ', &parts);
+            if (atoi(parts[0].c_str()) != collapse.v1.first) {
+                std::cerr << "expected v1" << std::endl;
+                throw 2;
+            }
+            bool first = true;
+            for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
+                if (first) {
+                    first = false;
+                    continue;
+                }
+                collapse.v1_faces.push_back(atoi(it->c_str()));
+            }
+            //----
+            std::getline (in, str);
+            split_string(str, ' ', &parts);
+            if (atoi(parts[0].c_str()) != collapse.v2.first) {
+                std::cerr << "expected v2" << std::endl;
+                throw 2;
+            }
+            first = true;
+            for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
+                if (first) {
+                    first = false;
+                    continue;
+                }
+                collapse.v2_faces.push_back(atoi(it->c_str()));
+            }
+            // New
+            std::getline (in, str);
+    	    if (str != "New") {
+    	        std::cerr << "Line not 'New'" << std::endl;
+                throw 2;
+    	    }
+    	    //----
+    	    std::getline (in, str);
+            split_string(str, ' ', &parts);
+            if (parts.size() != 4) {
+                std::cerr << "v size not 4" << std::endl;
+                throw 2;
+            }
+            collapse.v = std::make_pair(atoi(parts[0].c_str()), glm::vec3(atof(parts[1].c_str()), atof(parts[2].c_str()), atof(parts[3].c_str())));
+            //----
+            std::getline (in, str);
+            split_string(str, ' ', &parts);
+            if (atoi(parts[0].c_str()) != collapse.v.first) {
+                std::cerr << "expected v" << std::endl;
+                throw 2;
+            }
+            first = true;
+            for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
+                if (first) {
+                    first = false;
+                    continue;
+                }
+                collapse.v_faces.push_back(atoi(it->c_str()));
+            }
+            // Degenerate
+            std::getline (in, str);
+    	    if (str != "Degenerate") {
+    	        std::cerr << "Line not 'Degenerate'" << std::endl;
+                throw 2;
+    	    }
+    	    //----
+    	    std::getline (in, str);
+    	    if (str != "Face") {
+    	        std::cerr << "Line not 'Face'" << std::endl;
+                throw 2;
+    	    }            
+    	    //----
+    	    while (std::getline (in, str) && str != "Vert_to_face") {
+    	        split_string(str, ' ', &parts);
+                if (parts.size() != 4) {
+                    std::cerr << "face size not 4" << std::endl;
+                    throw 2;
+                }
+                collapse.d_faces.push_back(std::make_pair(atoi(parts[0].c_str()), glm::vec3(atoi(parts[1].c_str()), atoi(parts[2].c_str()), atoi(parts[3].c_str()))));
+    	    }
+    	    //----
+    	    //     std::vector<std::pair<int, std::vector<int> > > vert_to_del_faces; // (vertex index, list of degenerate faces deleted in _vertex_to_faces[vertex index])
+            
+    	    while (std::getline (in, str) && str != "End") {
+    	        split_string(str, ' ', &parts);
+                first = true;
+                std::vector<int> face_list;
+                for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
+                    if (first) {
+                        first = false;
+                        continue;
+                    }
+                    face_list.push_back(atoi(it->c_str()));
+                }
+                collapse.vert_to_del_faces.push_back(std::make_pair(atoi(parts[0].c_str()), face_list));
+    	    }
+            _to_collapse.push(collapse);
+        }
+    }
+}
+
 void Mesh::normalizeVerts() {
     float min_x = 999999;
     float min_y = 999999;
@@ -232,7 +390,6 @@ bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
     std::stringstream new_output (std::stringstream::in | std::stringstream::out);
     std::stringstream degenerate_output (std::stringstream::in | std::stringstream::out);
     
-    (*edge_output) << "Collapse" << std::endl;
     old_output << vert1 << " " << _vertices[vert1].x << " " << _vertices[vert1].y << " " << _vertices[vert1].z << std::endl;
     old_output << vert2 << " " << _vertices[vert2].x << " " << _vertices[vert2].y << " " << _vertices[vert2].z << std::endl;
     
@@ -366,12 +523,14 @@ bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
     std::string s_new_output = new_output.str();
     std::string s_degenerate_output = degenerate_output.str();
 
+    (*edge_output) << "Collapse" << std::endl;
     (*edge_output) << "Old" << std::endl;
     (*edge_output) << s_old_output;
     (*edge_output) << "New" << std::endl;
     (*edge_output) << s_new_output;
     (*edge_output) << "Degenerate" << std::endl;
     (*edge_output) << s_degenerate_output;
+    (*edge_output) << "End" << std::endl;
     
     return true;
 }
