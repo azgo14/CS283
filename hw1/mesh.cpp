@@ -224,8 +224,23 @@ void Mesh::loadEdgeCollapse(const char* filename) {
                 }
                 collapse.v2_faces.push_back(atoi(it->c_str()));
             }
-            // New
+            //-----
             std::getline (in, str);
+            while (str != "New") {
+                first = true;
+                split_string(str, ' ', &parts);
+                std::vector<int> temp;
+                for (std::vector<std::string>::iterator it = parts.begin(); it != parts.end(); ++it) {
+                    if (first) {
+                        first = false;
+                        continue;
+                    }
+                    temp.push_back(atoi(it->c_str()));
+                }                
+                collapse.v2_affected_faces.push_back(std::make_pair(atoi(parts[0].c_str()), temp));
+                std::getline (in, str);  
+            }
+            // New
     	    if (str != "New") {
     	        std::cerr << "Line not 'New'" << std::endl;
                 throw 2;
@@ -298,34 +313,6 @@ void Mesh::loadEdgeCollapse(const char* filename) {
     }
 }
 
-
-
-// struct EdgeCollapse {
-//     std::pair<int, glm::vec3> v1;  // (index, vector)
-//     std::pair<int, glm::vec3> v2;
-//     std::pair<int, glm::vec3> v;
-//     std::vector<int> v1_faces;
-//     std::vector<int> v2_faces;
-//     std::vector<int> v_faces;
-//     std::vector<std::pair<int, glm::vec3> > d_faces; // (degenerate face index, vertex indices of face)
-//     std::vector<std::pair<int, std::vector<int> > > vert_to_del_faces; // (vertex index, list of degenerate faces deleted in _vertex_to_faces[vertex index])
-// } ;
-
-
-// std::vector<glm::vec3> _vertices;
-// std::vector<glm::vec3> _normals;
-// std::vector<int> _faces;
-// std::vector<glm::vec3> _face_normals;
-// std::vector<glm::mat4> _quadrics;
-// std::vector<std::pair<float, std::pair<int, int> > > _pairs;
-// 
-// private:    
-// std::map<int, std::vector<int> > _vertex_to_faces;  //vertex to list of adjacent faces
-// 
-// std::stack<EdgeCollapse> _to_collapse;
-// std::stack<EdgeCollapse> _to_split;
-
-
 // change _vertices, _normals, _faces, _vertex_to_faces, _to_split, _to_collapse
 bool Mesh::stackSplit() {
     if (!_to_split.empty()) {
@@ -340,6 +327,18 @@ bool Mesh::stackSplit() {
             _faces[3*it->first] = it->second.x;
             _faces[3*it->first +1] = it->second.y;
             _faces[3*it->first +2] = it->second.z;
+        }
+        
+        // change v1 to v2 for affected faces
+        for (std::vector<std::pair<int, std::vector<int> > >::iterator it = current.v2_affected_faces.begin();
+             it != current.v2_affected_faces.end(); ++it) {  
+            for (std::vector<int>::iterator v_it = it->second.begin(); v_it != it->second.end(); ++v_it) {
+                if (_faces[(3* it->first) + *v_it] != current.v1.first) {
+                    std::cerr<<"location is not v1: " << current.v1.first << " vs " << _faces[(3* it->first) + *v_it]  <<std::endl;
+                    throw 2;
+                }
+                _faces[(3* it->first) + *v_it] = current.v2.first;
+            }
         }
 
         // change _vertex_to_faces
@@ -357,36 +356,62 @@ bool Mesh::stackSplit() {
         
         for (std::vector<int>::iterator it = current.v2_faces.begin(); it != current.v2_faces.end(); ++it) {
             _vertex_to_faces[current.v2.first].push_back(*it);
-            
-            // also fix _faces
-            if (_faces[3 * (*it)] == current.v1.first) {
-                _faces[3 * (*it)] = current.v2.first;
-            } else if (_faces[3 * (*it)+1] == current.v1.first) {
-                _faces[3 * (*it)+1] = current.v2.first;
-            } else if (_faces[3 * (*it)+2] == current.v1.first) {
-                _faces[3 * (*it)+2] = current.v2.first;
+        }
+    
+        // calculate normal at vert1 and vert2
+        std::set<int> affected_v;
+        for (std::vector<int>::iterator v_it = _vertex_to_faces[current.v1.first].begin();
+             v_it != _vertex_to_faces[current.v1.first].end(); ++v_it) {
+             affected_v.insert(_faces[3*(*v_it)]);
+             affected_v.insert(_faces[3*(*v_it)+1]);
+             affected_v.insert(_faces[3*(*v_it)+2]);
+        }
+        
+        for (std::vector<int>::iterator v_it = _vertex_to_faces[current.v2.first].begin();
+             v_it != _vertex_to_faces[current.v2.first].end(); ++v_it) {
+             affected_v.insert(_faces[3*(*v_it)]);
+             affected_v.insert(_faces[3*(*v_it)+1]);
+             affected_v.insert(_faces[3*(*v_it)+2]);
+                
+        }
+
+        for (std::set<int>::iterator it = affected_v.begin(); it != affected_v.end(); ++it) {
+            _normals[*it] = glm::vec3(0,0,0);
+            for (std::vector<int>::iterator v_it = _vertex_to_faces[*it].begin();
+                 v_it != _vertex_to_faces[*it].end(); ++v_it) {                     
+                _normals[*it] += getNormal(_vertices[_faces[3*(*v_it)]], _vertices[_faces[3*(*v_it)+1]], _vertices[_faces[3*(*v_it)+2]]);
             }
+            _normals[*it] = glm::normalize(
+                                glm::vec3(_normals[*it].x / static_cast<double>(_vertex_to_faces[*it].size()),
+                                          _normals[*it].y / static_cast<double>(_vertex_to_faces[*it].size()),
+                                          _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
         }
         
         _to_collapse.push(current);
+        return true;
     }
+    return false;
 }
 
 bool Mesh::stackCollapse() {
     if (!_to_collapse.empty()) {
         EdgeCollapse current = _to_collapse.top();
         _to_collapse.pop();
-        //change _vertices
-        if (current.v.first != current.v1.first) {
-            std::cerr << "v1 and v not same index" << std::endl;
+        
+        std::ofstream useless;
+        bool test = collapse(current.v1.first, current.v2.first, &useless, false);
+        if (!test) {
+            std::cerr << "Collapse didn't work but it should have" << std::endl;
             throw 2;
         }
-        _vertices[current.v.first] = current.v.second;
-        _vertices[current.v2.first] = glm::vec3(10000,10000,10000);
-        
-        
         _to_split.push(current);
+        return true;
     }
+    return false;
+}
+
+int Mesh::numOfCollapse() {
+    return _to_collapse.size();
 }
 
 void Mesh::normalizeVerts() {
@@ -463,7 +488,7 @@ bool Mesh::hasEdge(int vert1, int vert2) {
     return false;
 }    
 
-bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
+bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output, bool output) {
     if (!hasEdge(vert1, vert2)) {
         std::cerr << "Warning has no edge in between" << std::endl;
         return false;
@@ -501,15 +526,20 @@ bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
     // change all occurrences of v1 and v2 with new v
     for (std::vector<int>::iterator v2_it = _vertex_to_faces[vert2].begin();
          v2_it != _vertex_to_faces[vert2].end(); ++v2_it) {
+        old_output << *v2_it; 
         if (_faces[3*(*v2_it)] == vert2) {  // vert2 doesn't exist anymore, need to replace with vert1 which is the new vertex index
             _faces[3*(*v2_it)] = vert1;
+            old_output << " " << 0;
         }
         if (_faces[3*(*v2_it) + 1] == vert2) {
             _faces[3*(*v2_it) + 1] = vert1;
+            old_output << " " << 1;
         }
         if (_faces[3*(*v2_it) + 2] == vert2) {
             _faces[3*(*v2_it) + 2] = vert1;
+            old_output << " " << 2;
         }
+        old_output << std::endl;
         if (std::find(_vertex_to_faces[vert1].begin(), _vertex_to_faces[vert1].end(),*v2_it) == _vertex_to_faces[vert1].end()) {
             _vertex_to_faces[vert1].push_back(*v2_it);  // vert1 is the new vertex index. faces adjacent to v2 and v1 are now adjacent to new v
         }
@@ -605,15 +635,16 @@ bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output) {
     std::string s_new_output = new_output.str();
     std::string s_degenerate_output = degenerate_output.str();
 
-    (*edge_output) << "Collapse" << std::endl;
-    (*edge_output) << "Old" << std::endl;
-    (*edge_output) << s_old_output;
-    (*edge_output) << "New" << std::endl;
-    (*edge_output) << s_new_output;
-    (*edge_output) << "Degenerate" << std::endl;
-    (*edge_output) << s_degenerate_output;
-    (*edge_output) << "End" << std::endl;
-    
+    if (output) {
+        (*edge_output) << "Collapse" << std::endl;
+        (*edge_output) << "Old" << std::endl;
+        (*edge_output) << s_old_output;
+        (*edge_output) << "New" << std::endl;
+        (*edge_output) << s_new_output;
+        (*edge_output) << "Degenerate" << std::endl;
+        (*edge_output) << s_degenerate_output;
+        (*edge_output) << "End" << std::endl;
+    }
     return true;
 }
 
@@ -711,7 +742,7 @@ void Mesh::quadricSimplify(int simplify_num) {
         
         std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
         // contract the pair (u, v)
-        bool complete = collapse(pair.first, pair.second, &edge_output);
+        bool complete = collapse(pair.first, pair.second, &edge_output, true);
 
         _quadrics[pair.first] += _quadrics[pair.second];  // only do this for u v
         
@@ -751,5 +782,24 @@ void Mesh::printMatrix(glm::mat4 matrix) {
         }
     }
     std::cout << "****\n";
+}
+
+void Mesh::setResolution(int edge_collapse_done) {
+    if (_to_split.size() > edge_collapse_done) {
+        while (_to_split.size() > edge_collapse_done) {
+            bool test = stackSplit();
+            if (!test) {
+                std::cerr << "stack split failed" << std::endl;
+            }
+        }
+    } else {
+        while (_to_split.size() < edge_collapse_done) {
+            bool test = stackCollapse();
+            if (!test) {
+                std::cerr << "stack collapse failed" << std::endl;
+            }
+        }
+    }
+    
 }
 

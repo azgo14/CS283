@@ -30,6 +30,9 @@ int fovy = 90;
 bool debug = false;
 bool wireframe = false;
 
+int slider = 0;
+int slider_max;
+
 GLuint vertexshader,fragmentshader,shaderprogram; // shaders
 
 // Constants to set up lighting on the teapot
@@ -88,12 +91,11 @@ std::string imgNumber(int num) {
 
 void printHelp() {
 	std::cout << "\npress 'h' to print this message again.\n" 
-		<< "press '+' or '-' to change the amount of rotation that\n"
-		<< "occurs with each arrow press.\n" 
+		<< "press '+' or '-' to change the amount of resolution change.\n" 
 		<< "press 'g' to switch between using glm::lookAt or your own LookAt.\n"     
 		<< "press 'r' to reset the transformation (eye and up).\n"
 		<< "press 'z' to zoom in. 'x' to zoom out.\n"
-                << "enter a number to specify how many faces the simplified model should have.\n"
+        << "press 'm' to decrease resolution. 'n' to increase.\n"
 		<< "press ESC to quit.\n\n";  
 
 }
@@ -149,6 +151,18 @@ void keyboard(unsigned char key,int x,int y) {
         case 'w':
             wireframe = !wireframe;
             break;
+        case 'm':
+            if (slider < slider_max) {
+                slider += amount;
+                slider = std::min(slider, slider_max);
+            }
+            break;
+        case 'n':
+            if (slider > 0) {
+                slider -= amount;
+                slider = std::max(slider, 0);
+            }
+            break;
         break;
     }
     glutPostRedisplay();
@@ -160,16 +174,16 @@ void keyboard(unsigned char key,int x,int y) {
 void specialKey(int key,int x,int y) {
 	switch(key) {
 		case 100: //left
-			Transform::left(amount,eye,up);
+			Transform::left(5,eye,up);
 			break;
 		case 101: //up
-			Transform::up(amount,eye,up);
+			Transform::up(5,eye,up);
 			break;
 		case 102: //right
-			Transform::left(-amount,eye,up);
+			Transform::left(-5,eye,up);
 			break;
 		case 103: //down
-			Transform::up(-amount,eye,up);
+			Transform::up(-5,eye,up);
 			break;
 	}
 	glutPostRedisplay();
@@ -208,9 +222,13 @@ void init(const char* filename) {
 	shininess = glGetUniformLocation(shaderprogram,"shininess");     
 	
 	std::cout << "Loading in file: " << filename << std::endl;
+    Mesh temp;
+    temp.loadMesh(filename);
+    temp.quadricSimplify(simplify_num);
+    
     model.loadMesh(filename);
-    model.quadricSimplify(simplify_num);
     model.loadEdgeCollapse("edge_collapse.txt");
+    slider_max = model.numOfCollapse();
     std::cout << "Done loading" << std::endl;  
 }
 
@@ -254,6 +272,7 @@ void display() {
     glUniform1i(islight,true);
     glUniform1i(isdebug, false);
     
+    model.setResolution(slider);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     if (debug) {
