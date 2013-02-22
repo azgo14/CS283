@@ -39,6 +39,8 @@ public:
     void getPairs();
     float calcError(std::pair<int, int> pair);
     void quadricSimplify(int simplify_num);
+    bool stackSplit();
+    bool stackCollapse();
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;
