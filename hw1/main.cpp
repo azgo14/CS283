@@ -17,6 +17,7 @@
 #include <vector>
 #include "mesh.h"
 #include <algorithm>
+#include "display.h"
 
 int amount; // The amount of rotation for each arrow press
 
@@ -155,12 +156,14 @@ void keyboard(unsigned char key,int x,int y) {
             if (slider < slider_max) {
                 slider += amount;
                 slider = std::min(slider, slider_max);
+                model.setResolution(slider);
             }
             break;
         case 'n':
             if (slider > 0) {
                 slider -= amount;
                 slider = std::max(slider, 0);
+                model.setResolution(slider);
             }
             break;
         break;
@@ -233,7 +236,7 @@ void init(const char* filename) {
     std::cout << "Done loading" << std::endl;  
 }
 
-void display() {
+void shared::display() {
     glClearColor(0,0,1,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     if (wireframe) {
@@ -273,7 +276,6 @@ void display() {
     glUniform1i(islight,true);
     glUniform1i(isdebug, false);
     
-    model.setResolution(slider);
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
     if (debug) {
@@ -316,7 +318,7 @@ int main(int argc,char* argv[]) {
 	glutCreateWindow("HW1: Meshes");
 	init(argv[1]);
 
-	glutDisplayFunc(display);
+	glutDisplayFunc(shared::display);
 	glutSpecialFunc(specialKey);
 	glutKeyboardFunc(keyboard);
 	glutReshapeFunc(reshape);

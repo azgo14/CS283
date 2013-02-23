@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <set>
 #include "mesh.h"
+#include "display.h"
 
-#define BLEND_PARAMETER 0.5
+float DIVIDER;
 
 bool comparePairs(std::pair<float, std::pair<int, int> > pair1, std::pair<float, std::pair<int, int> > pair2) {
     return pair1.first > pair2.first;
@@ -317,12 +318,6 @@ bool Mesh::stackSplit() {
         _to_split.pop();
         
         // change vertices
-/*
-        float alpha = BLEND_PARAMETER;
-        _vertices[current.v1.first] = alpha * current.v1.second + (1 - alpha) * _vertices[current.v1.first];
-        _vertices[current.v2.first] = alpha * current.v2.second + (1 - alpha) * _vertices[current.v2.first];
-        glutPostRedisplay();
-*/   
         _vertices[current.v1.first] = current.v1.second;
         _vertices[current.v2.first] = current.v2.second;
         
@@ -392,6 +387,18 @@ bool Mesh::stackSplit() {
                                           _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
         }
         
+        float alpha = .01 * DIVIDER;
+        for (int i = 0; i < 100 / DIVIDER; ++i) {
+            _vertices[current.v1.first] = current.v.second + alpha * (current.v1.second - current.v.second);
+            _vertices[current.v2.first] = current.v.second + alpha * (current.v2.second - current.v.second);
+        	shared::display();
+            alpha += .01 * DIVIDER;
+        }
+        
+        _vertices[current.v1.first] = current.v1.second;
+        _vertices[current.v2.first] = current.v2.second;
+    
+
         _to_collapse.push(current);
         return true;
     }
@@ -402,15 +409,15 @@ bool Mesh::stackCollapse() {
     if (!_to_collapse.empty()) {
         EdgeCollapse current = _to_collapse.top();
         _to_collapse.pop();
+
+        float alpha = .01 * DIVIDER;
+        for (int i = 0; i < 100 / DIVIDER; ++i) {
+            _vertices[current.v1.first] = current.v1.second + alpha * (current.v.second - current.v1.second);
+            _vertices[current.v2.first] = current.v2.second + alpha * (current.v.second - current.v2.second);
+            shared::display();
+            alpha += .01 * DIVIDER;
+        }
         
-        // interpolate the vertices for the geomorph
-        /*
-        float alpha = BLEND_PARAMETER;
-        glm::vec3 v = glm::vec3(0.5 * (_vertices[current.v1.first].x + _vertices[current.v2.first].x), 0.5 * (_vertices[current.v1.first].y + _vertices[current.v2.first].y), 0.5 * (_vertices[current.v1.first].z + _vertices[current.v2.first].z));
-        _vertices[current.v1.first] = alpha * v + (1 - alpha) * _vertices[current.v1.first];
-        _vertices[current.v2.first] = alpha * v + (1 - alpha) * _vertices[current.v2.first];
-        glutPostRedisplay();
-        */
         std::ofstream useless;
         bool test = collapse(current.v1.first, current.v2.first, &useless, false);
 
@@ -501,6 +508,11 @@ bool Mesh::hasEdge(int vert1, int vert2) {
     }
     return false;
 }    
+
+// bool Mesh::collapseInvCheck(int vert1, int vert2, std::ofstream * edge_output, bool output) {
+//     std::stringstream inter (std::stringstream::in | std::stringstream::out);
+//     
+// }
 
 bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output, bool output) {
     if (!hasEdge(vert1, vert2)) {
@@ -804,7 +816,10 @@ void Mesh::quadricSimplify(int simplify_num) {
         //std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
         // contract the pair (u, v)
         bool complete = collapse(pair.first, pair.second, &edge_output, true);
-
+        if (!complete) {
+            --i;
+            continue;
+        }
         _quadrics[pair.first] += _quadrics[pair.second];  // only do this for u v
         
         // update the costs of all valid pairs involving u and v (converting those involving v to be involving with u). ASSUMPTION: there is no (u,v) pair anymore
@@ -837,6 +852,7 @@ void Mesh::quadricSimplify(int simplify_num) {
 }
 
 void Mesh::setResolution(int edge_collapse_done) {
+    DIVIDER = std::min(abs(_to_split.size() - edge_collapse_done), 100);
     if (_to_split.size() > edge_collapse_done) {
         while (_to_split.size() > edge_collapse_done) {
             bool test = stackSplit();
