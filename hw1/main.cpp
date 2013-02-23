@@ -62,6 +62,8 @@ GLuint isdebug;
 // Variables to keep track of mesh model
 Mesh model;
 int simplify_num;
+bool pre_simplified = false;
+char * collapse_file;
 
 // New helper transformation function to transform vector by modelview 
 // May be better done using newer glm functionality.
@@ -227,13 +229,20 @@ void init(const char* filename) {
 	shininess = glGetUniformLocation(shaderprogram,"shininess");     
 	
 	std::cout << "Loading in file: " << filename << std::endl;
-    Mesh temp;
-    temp.loadMesh(filename);
-    simplify_num = temp._faces.size();
-    temp.quadricSimplify(simplify_num);
+    if (!pre_simplified) {
+        Mesh temp;
+        temp.loadMesh(filename);
+        simplify_num = temp._faces.size();
+        temp.quadricSimplify(simplify_num);
+    }
     
     model.loadMesh(filename);
-    model.loadEdgeCollapse("edge_collapse.txt");
+    if (!pre_simplified) {
+        model.loadEdgeCollapse("edge_collapse.txt");
+        
+    } else {
+        model.loadEdgeCollapse(collapse_file);
+    }
     slider_max = model.numOfCollapse();
     std::cout << "Done loading" << std::endl;  
 }
@@ -307,9 +316,14 @@ void shared::display() {
 }
 
 int main(int argc,char* argv[]) {
-    if(argc != 2) {
+    if(argc != 2 && argc != 3) {
         std::cerr << "Usage: path to the OFF file" << std::endl;
         throw 2;
+    }
+    
+    if (argc == 3) {
+        pre_simplified = true;
+        collapse_file = argv[2];
     }
     printHelp();
 	
