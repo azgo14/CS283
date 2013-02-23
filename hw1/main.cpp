@@ -224,6 +224,7 @@ void init(const char* filename) {
 	std::cout << "Loading in file: " << filename << std::endl;
     Mesh temp;
     temp.loadMesh(filename);
+    simplify_num = temp._faces.size();
     temp.quadricSimplify(simplify_num);
     
     model.loadMesh(filename);
@@ -302,22 +303,8 @@ void display() {
 }
 
 int main(int argc,char* argv[]) {
-    // std::vector<int> test;
-    // test.push_back(1);
-    // test.push_back(2);
-    // test.push_back(3);
-    // std::make_heap(test.begin(), test.end());
-    // std::cout << "Largest is 3: " << test.front() <<std::endl;
-    // std::pop_heap(test.begin(), test.end());
-    // test.pop_back();
-    // std::vector<int>::iterator it = std::find(test.begin(), test.end(), 2);
-    // test.erase(it);
-    // test.push_back(4);
-    // std::push_heap(test.begin(), test.end());
-    // std::cout << "Second is 4: " << test.front() <<std::endl;
-	
-	if(argc != 3) {
-        std::cerr << "Usage: path to the OFF file, number of times to simplify" << std::endl;
+    if(argc != 2) {
+        std::cerr << "Usage: path to the OFF file" << std::endl;
         throw 2;
     }
     printHelp();
@@ -326,8 +313,7 @@ int main(int argc,char* argv[]) {
 	FreeImage_Initialise();
 	glutInit(&argc,argv);
 	glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGBA | GLUT_DEPTH);
-	glutCreateWindow("HW1: Transformations");
-	simplify_num = atoi(argv[2]);
+	glutCreateWindow("HW1: Meshes");
 	init(argv[1]);
 
 	glutDisplayFunc(display);

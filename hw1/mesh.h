@@ -32,11 +32,10 @@ public:
     void debugVerts(std::vector<glm::vec3>* vertex);
     void debugNorms(std::vector<glm::vec3>* norms);
     void debugVertColors(std::vector<glm::vec3>* colors);
-    bool collapse(int vert1, int vert2, std::ofstream* output, bool output);
+    bool collapse(int vert1, int vert2, std::ofstream* output1, bool output2);
     bool hasEdge(int vert1, int vert2);
     void calcQuadrics();
     glm::mat4 calcQuadricMatrix(int vert);
-    void printMatrix(glm::mat4 matrix); // for debugging purposes, remove when we're done
     void getPairs();
     float calcError(std::pair<int, int> pair);
     void quadricSimplify(int simplify_num);
@@ -45,7 +44,6 @@ public:
     int numOfCollapse();
     void setResolution(int slider);
     bool boundary(int vert,  std::vector<std::pair<int, int> >* return_list);
-    
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;

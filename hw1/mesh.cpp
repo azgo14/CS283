@@ -5,6 +5,8 @@
 #include <set>
 #include "mesh.h"
 
+#define BLEND_PARAMETER 0.5
+
 bool comparePairs(std::pair<float, std::pair<int, int> > pair1, std::pair<float, std::pair<int, int> > pair2) {
     return pair1.first > pair2.first;
 }
@@ -140,13 +142,6 @@ void Mesh::loadMesh(const char * filename) {
     }
     calcNorms();
     normalizeVerts();
-    /*
-    for (std::vector<std::pair<float, std::pair<int, int> > >::iterator it = _pairs.begin(); it != _pairs.end(); ++it) {
-        std::pair<float, std::pair<int, int> >p = *it;
-        std::cout << p.first << ", (" << p.second.first << ", " << p.second.second << ")\n";
-    }
-    std::cout << "********\n";
-    */
 }
 
 namespace {
@@ -160,7 +155,9 @@ namespace {
     }
 }
 
+
 void Mesh::loadEdgeCollapse(const char* filename) {
+
     std::string str = ""; 
     std::ifstream in; 
     
@@ -306,7 +303,7 @@ void Mesh::loadEdgeCollapse(const char* filename) {
             _to_split.push(collapse);
         }
     }
-    // start from full model so need ot move everything in _to_split to _to_collapse
+    // start from full model so need to move everything in _to_split to _to_collapse
     while (!_to_split.empty()) {
         _to_collapse.push(_to_split.top());
         _to_split.pop();
@@ -318,9 +315,17 @@ bool Mesh::stackSplit() {
     if (!_to_split.empty()) {
         EdgeCollapse current = _to_split.top();
         _to_split.pop();
-        // change _vertices
+        
+        // change vertices
+/*
+        float alpha = BLEND_PARAMETER;
+        _vertices[current.v1.first] = alpha * current.v1.second + (1 - alpha) * _vertices[current.v1.first];
+        _vertices[current.v2.first] = alpha * current.v2.second + (1 - alpha) * _vertices[current.v2.first];
+        glutPostRedisplay();
+*/   
         _vertices[current.v1.first] = current.v1.second;
         _vertices[current.v2.first] = current.v2.second;
+        
         
         // change _faces
         for (std::vector<std::pair<int, glm::vec3> >::iterator it = current.d_faces.begin(); it != current.d_faces.end(); ++it) {
@@ -398,8 +403,17 @@ bool Mesh::stackCollapse() {
         EdgeCollapse current = _to_collapse.top();
         _to_collapse.pop();
         
+        // interpolate the vertices for the geomorph
+        /*
+        float alpha = BLEND_PARAMETER;
+        glm::vec3 v = glm::vec3(0.5 * (_vertices[current.v1.first].x + _vertices[current.v2.first].x), 0.5 * (_vertices[current.v1.first].y + _vertices[current.v2.first].y), 0.5 * (_vertices[current.v1.first].z + _vertices[current.v2.first].z));
+        _vertices[current.v1.first] = alpha * v + (1 - alpha) * _vertices[current.v1.first];
+        _vertices[current.v2.first] = alpha * v + (1 - alpha) * _vertices[current.v2.first];
+        glutPostRedisplay();
+        */
         std::ofstream useless;
         bool test = collapse(current.v1.first, current.v2.first, &useless, false);
+
         if (!test) {
             std::cerr << "Collapse didn't work but it should have" << std::endl;
             throw 2;
@@ -769,10 +783,10 @@ void Mesh::quadricSimplify(int simplify_num) {
     std::pair<int, int> pair, p;
     std::cout << "size: " << _pairs.size() << std::endl;
     for (int i = 0; i < simplify_num; ++i) {
-        std::cout << "Currently " << i << " iteration" << std::endl;
+        //std::cout << "Currently " << i << " iteration" << std::endl;
 
         if (_pairs.size() == 0) {
-            std::cout << "No more iterations left" << std::endl;
+           //std::cout << "No more iterations left" << std::endl;
             return;
         }
         std::make_heap(_pairs.begin(), _pairs.end(), comparePairs);
@@ -787,7 +801,7 @@ void Mesh::quadricSimplify(int simplify_num) {
             continue;
         }
         
-        std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
+        //std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
         // contract the pair (u, v)
         bool complete = collapse(pair.first, pair.second, &edge_output, true);
 
@@ -820,15 +834,6 @@ void Mesh::quadricSimplify(int simplify_num) {
             _pairs.push_back(std::make_pair(calcError(*to_add_it), *to_add_it));
         }   
     }
-}
-
-void Mesh::printMatrix(glm::mat4 matrix) {
-    for (int row = 0; row < 4; row++) {
-        for (int column = 0; column < 4; column++) {
-            std::cout << matrix[row][column] << ", ";
-        }
-    }
-    std::cout << "****\n";
 }
 
 void Mesh::setResolution(int edge_collapse_done) {
