@@ -158,7 +158,12 @@ namespace {
 
 
 void Mesh::loadEdgeCollapse(const char* filename) {
-
+    while (!_to_split.empty()) {
+        _to_split.pop();
+    }
+    while (!_to_collapse.empty()) {
+        _to_collapse.pop();
+    }
     std::string str = ""; 
     std::ifstream in; 
     
@@ -312,7 +317,7 @@ void Mesh::loadEdgeCollapse(const char* filename) {
 }
 
 // change _vertices, _normals, _faces, _vertex_to_faces, _to_split, _to_collapse
-bool Mesh::stackSplit() {
+bool Mesh::stackSplit(bool animate) {
     if (!_to_split.empty()) {
         EdgeCollapse current = _to_split.top();
         _to_split.pop();
@@ -378,7 +383,17 @@ bool Mesh::stackSplit() {
         for (std::set<int>::iterator it = affected_v.begin(); it != affected_v.end(); ++it) {
             _normals[*it] = glm::vec3(0,0,0);
             for (std::vector<int>::iterator v_it = _vertex_to_faces[*it].begin();
-                 v_it != _vertex_to_faces[*it].end(); ++v_it) {                     
+                 v_it != _vertex_to_faces[*it].end(); ++v_it) { 
+                 if (_faces[3*(*v_it)] == _faces[3*(*v_it)+1] ||
+                     _faces[3*(*v_it)+1] == _faces[3*(*v_it)+2] ||
+                     _faces[3*(*v_it)] == _faces[3*(*v_it)+2]) {
+                     continue;
+                 }              
+                 if (_vertices[_faces[3*(*v_it)]].x == 10000 ||
+                     _vertices[_faces[3*(*v_it)+1]].x == 10000 ||
+                     _vertices[_faces[3*(*v_it)]].x == 10000) {
+                     continue;
+                 }      
                 _normals[*it] += getNormal(_vertices[_faces[3*(*v_it)]], _vertices[_faces[3*(*v_it)+1]], _vertices[_faces[3*(*v_it)+2]]);
             }
             _normals[*it] = glm::normalize(
@@ -387,14 +402,15 @@ bool Mesh::stackSplit() {
                                           _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
         }
         
-        float alpha = .01 * DIVIDER;
-        for (int i = 0; i < 100 / DIVIDER; ++i) {
-            _vertices[current.v1.first] = current.v.second + alpha * (current.v1.second - current.v.second);
-            _vertices[current.v2.first] = current.v.second + alpha * (current.v2.second - current.v.second);
-        	shared::display();
-            alpha += .01 * DIVIDER;
+        if (animate) {
+            float alpha = .01 * DIVIDER;
+            for (int i = 0; i < 100 / DIVIDER; ++i) {
+                _vertices[current.v1.first] = current.v.second + alpha * (current.v1.second - current.v.second);
+                _vertices[current.v2.first] = current.v.second + alpha * (current.v2.second - current.v.second);
+            	shared::display();
+                alpha += .01 * DIVIDER;
+            }
         }
-        
         _vertices[current.v1.first] = current.v1.second;
         _vertices[current.v2.first] = current.v2.second;
     
@@ -405,20 +421,20 @@ bool Mesh::stackSplit() {
     return false;
 }
 
-bool Mesh::stackCollapse() {
+bool Mesh::stackCollapse(bool animate) {
     if (!_to_collapse.empty()) {
         EdgeCollapse current = _to_collapse.top();
         _to_collapse.pop();
-
-        float alpha = .01 * DIVIDER;
-        for (int i = 0; i < 100 / DIVIDER; ++i) {
-            _vertices[current.v1.first] = current.v1.second + alpha * (current.v.second - current.v1.second);
-            _vertices[current.v2.first] = current.v2.second + alpha * (current.v.second - current.v2.second);
-            shared::display();
-            alpha += .01 * DIVIDER;
+        if (animate) {
+            float alpha = .01 * DIVIDER;
+            for (int i = 0; i < 100 / DIVIDER; ++i) {
+                _vertices[current.v1.first] = current.v1.second + alpha * (current.v.second - current.v1.second);
+                _vertices[current.v2.first] = current.v2.second + alpha * (current.v.second - current.v2.second);
+                shared::display();
+                alpha += .01 * DIVIDER;
+            }
         }
-        
-        std::ofstream useless;
+        std::stringstream useless;
         bool test = collapse(current.v1.first, current.v2.first, &useless, false);
 
         if (!test) {
@@ -509,12 +525,49 @@ bool Mesh::hasEdge(int vert1, int vert2) {
     return false;
 }    
 
-// bool Mesh::collapseInvCheck(int vert1, int vert2, std::ofstream * edge_output, bool output) {
-//     std::stringstream inter (std::stringstream::in | std::stringstream::out);
-//     
-// }
+bool Mesh::collapseInvCheck(int vert1, int vert2, std::ofstream * edge_output, bool output) {
+    std::stringstream inter (std::stringstream::in | std::stringstream::out);
+    std::map<int, glm::vec3> face_to_normals;
+    for (std::vector<int>::iterator v1_it = _vertex_to_faces[vert1].begin();
+         v1_it != _vertex_to_faces[vert1].end(); ++v1_it) {
+        face_to_normals[*v1_it] = getNormal(_vertices[_faces[3*(*v1_it)]], _vertices[_faces[3*(*v1_it)+1]], _vertices[_faces[3*(*v1_it)+2]]);
+    }
+    
+    for (std::vector<int>::iterator v2_it = _vertex_to_faces[vert2].begin();
+         v2_it != _vertex_to_faces[vert2].end(); ++v2_it) {
+        face_to_normals[*v2_it] = getNormal(_vertices[_faces[3*(*v2_it)]], _vertices[_faces[3*(*v2_it)+1]], _vertices[_faces[3*(*v2_it)+2]]);
+    }
+    
+    if (!collapse(vert1, vert2, &inter, output)) {
+        std::cerr << "Collapse failed" << std::endl;
+        return false;
+    }
+    
+    bool ban = false;
+    for (std::vector<int>::iterator v_it = _vertex_to_faces[vert1].begin();
+         v_it != _vertex_to_faces[vert1].end(); ++v_it) {
+        if (glm::dot(face_to_normals[*v_it], getNormal(_vertices[_faces[3*(*v_it)]], _vertices[_faces[3*(*v_it)+1]], _vertices[_faces[3*(*v_it)+2]])) <= .5) {
+            ban = true;
+        }
+    }
+    
+    if (ban) {
+        std::ofstream temp("temporary.txt"); // slow but works
+        temp << inter.str();
+        temp.close();
+        loadEdgeCollapse("temporary.txt");
+        _to_split.push(_to_collapse.top());
+        _to_collapse.pop();
+        stackSplit(false);
+        _to_collapse.pop();
+        return false;
+    } else {
+        (*edge_output) << inter.str();
+    }
+    return true;
+}
 
-bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output, bool output) {
+bool Mesh::collapse(int vert1, int vert2, std::stringstream * edge_output, bool output) {
     if (!hasEdge(vert1, vert2)) {
         std::cerr << "Warning has no edge in between" << std::endl;
         return false;
@@ -650,12 +703,24 @@ bool Mesh::collapse(int vert1, int vert2, std::ofstream * edge_output, bool outp
         _normals[*it] = glm::vec3(0,0,0);
         for (std::vector<int>::iterator v_it = _vertex_to_faces[*it].begin();
              v_it != _vertex_to_faces[*it].end(); ++v_it) {
+             if (_faces[3*(*v_it)] == _faces[3*(*v_it)+1] ||
+                 _faces[3*(*v_it)+1] == _faces[3*(*v_it)+2] ||
+                 _faces[3*(*v_it)] == _faces[3*(*v_it)+2]) {
+                 continue;
+             }
+             if (_vertices[_faces[3*(*v_it)]].x == 10000 ||
+                 _vertices[_faces[3*(*v_it)+1]].x == 10000 ||
+                 _vertices[_faces[3*(*v_it)]].x == 10000) {
+                 continue;
+             }
             _normals[*it] += getNormal(_vertices[_faces[3*(*v_it)]], _vertices[_faces[3*(*v_it)+1]], _vertices[_faces[3*(*v_it)+2]]);
         }
+
         _normals[*it] = glm::normalize(
                             glm::vec3(_normals[*it].x / static_cast<double>(_vertex_to_faces[*it].size()),
                                       _normals[*it].y / static_cast<double>(_vertex_to_faces[*it].size()),
                                       _normals[*it].z / static_cast<double>(_vertex_to_faces[*it].size())));
+
     }
     std::string s_old_output = old_output.str();
     std::string s_new_output = new_output.str();
@@ -815,7 +880,7 @@ void Mesh::quadricSimplify(int simplify_num) {
         
         //std::cout << "Combine: " << pair.first << " " << pair.second << std::endl;
         // contract the pair (u, v)
-        bool complete = collapse(pair.first, pair.second, &edge_output, true);
+        bool complete = collapseInvCheck(pair.first, pair.second, &edge_output, true);
         if (!complete) {
             --i;
             continue;
@@ -855,14 +920,14 @@ void Mesh::setResolution(int edge_collapse_done) {
     DIVIDER = std::min(abs(_to_split.size() - edge_collapse_done), 100);
     if (_to_split.size() > edge_collapse_done) {
         while (_to_split.size() > edge_collapse_done) {
-            bool test = stackSplit();
+            bool test = stackSplit(true);
             if (!test) {
                 std::cerr << "stack split failed" << std::endl;
             }
         }
     } else {
         while (_to_split.size() < edge_collapse_done) {
-            bool test = stackCollapse();
+            bool test = stackCollapse(true);
             if (!test) {
                 std::cerr << "stack collapse failed" << std::endl;
             }

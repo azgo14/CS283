@@ -32,18 +32,19 @@ public:
     void debugVerts(std::vector<glm::vec3>* vertex);
     void debugNorms(std::vector<glm::vec3>* norms);
     void debugVertColors(std::vector<glm::vec3>* colors);
-    bool collapse(int vert1, int vert2, std::ofstream* output1, bool output2);
+    bool collapse(int vert1, int vert2, std::stringstream* output1, bool output2);
     bool hasEdge(int vert1, int vert2);
     void calcQuadrics();
     glm::mat4 calcQuadricMatrix(int vert);
     void getPairs();
     float calcError(std::pair<int, int> pair);
     void quadricSimplify(int simplify_num);
-    bool stackSplit();
-    bool stackCollapse();
+    bool stackSplit(bool animate);
+    bool stackCollapse(bool animate);
     int numOfCollapse();
     void setResolution(int slider);
     bool boundary(int vert,  std::vector<std::pair<int, int> >* return_list);
+    bool collapseInvCheck(int vert1, int vert2, std::ofstream * edge_output, bool output);
     
     std::vector<glm::vec3> _vertices;
     std::vector<glm::vec3> _normals;

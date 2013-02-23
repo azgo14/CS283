@@ -158,6 +158,7 @@ void keyboard(unsigned char key,int x,int y) {
                 slider = std::min(slider, slider_max);
                 model.setResolution(slider);
             }
+            glutPostRedisplay();
             break;
         case 'n':
             if (slider > 0) {
@@ -165,6 +166,7 @@ void keyboard(unsigned char key,int x,int y) {
                 slider = std::max(slider, 0);
                 model.setResolution(slider);
             }
+            glutPostRedisplay();      
             break;
         break;
     }
