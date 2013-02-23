@@ -654,6 +654,31 @@ void Mesh::calcQuadrics() {
     }
 }
 
+// return whether this vertex is at a boundary and also returns the edge at the boundary
+bool Mesh::boundary(int vert,  std::vector<std::pair<int, int> >* return_list) {
+    return_list->clear();
+    std::map<std::pair<int, int>, int> counter;
+    for (std::vector<int>::iterator it = _vertex_to_faces[vert].begin(); it != _vertex_to_faces[vert].end(); ++it) {
+        int v1 = _faces[3* (*it)];
+        int v2 = _faces[3* (*it)+1];
+        int v3 = _faces[3* (*it)+2];
+        counter[std::make_pair(std::min(v1,v2), std::max(v1,v2))]++;
+        counter[std::make_pair(std::min(v1,v3), std::max(v1,v3))]++;
+        counter[std::make_pair(std::min(v2,v3), std::max(v2,v3))]++;
+    }
+    for (std::map<std::pair<int, int>, int>::iterator it = counter.begin(); it != counter.end(); ++it) {
+        if (it->second == 1) {
+            if (it->first.first == vert || it->first.second == vert) {
+                return_list->push_back(it->first);
+            }
+        }
+    }
+    if (return_list->size() == 0) {
+        return false;
+    }
+    return true;
+}
+
 glm::mat4 Mesh::calcQuadricMatrix(int vert) {
     glm::mat4 Q(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
     for (std::vector<int>::iterator f_it = _vertex_to_faces[vert].begin(); f_it != _vertex_to_faces[vert].end(); ++f_it) {
@@ -664,6 +689,28 @@ glm::mat4 Mesh::calcQuadricMatrix(int vert) {
 		            p.z * p.x, p.z * p.y, p.z * p.z, p.z * p.w,
 		            p.w * p.x, p.w * p.y, p.w * p.z, p.w * p.w);
         Q += K;
+    }
+    
+    std::vector<std::pair<int, int> > return_list;
+    if (boundary(vert, &return_list)) {
+        for (std::vector<std::pair<int, int> >::iterator it = return_list.begin(); it != return_list.end(); ++it) {
+            int begin_vert;
+            int end_vert;
+            if (it->first == vert) {
+                begin_vert = it->first;
+                end_vert = it->second;
+            } else {
+                begin_vert = it->second;
+                end_vert = it->first;
+            }
+            glm::vec3 normal = glm::normalize(glm::cross(_vertices[end_vert] - _vertices[begin_vert], _normals[vert]));
+            glm::vec4 p(normal.x, normal.y, normal.z, -glm::dot(_vertices[vert], normal));
+            glm::mat4 K(p.x * p.x, p.x * p.y, p.x * p.z, p.x * p.w,
+    		            p.y * p.x, p.y * p.y, p.y * p.z, p.y * p.w,
+    		            p.z * p.x, p.z * p.y, p.z * p.z, p.z * p.w,
+    		            p.w * p.x, p.w * p.y, p.w * p.z, p.w * p.w);
+            Q += K;
+        }
     }
     
     return Q;

@@ -44,6 +44,7 @@ public:
     bool stackCollapse();
     int numOfCollapse();
     void setResolution(int slider);
+    bool boundary(int vert,  std::vector<std::pair<int, int> >* return_list);
     
     
     std::vector<glm::vec3> _vertices;
