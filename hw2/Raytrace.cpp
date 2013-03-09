@@ -5,7 +5,7 @@
 #include <FreeImage.h>
 #include "variables.h"
 #include "Raytrace.h"
-
+#include <omp.h>
 namespace {
   void getPrunnedObjs(BoundingBox* node, const vec3& source, const vec3& direction, std::vector<std::pair<Object*, vec3> > * results) {
     std::pair<bool, glm::vec3> bb_result = node->intersect(source,direction);
@@ -60,9 +60,10 @@ namespace {
 }
 void Raytrace::raytrace (const vec3& eye, const vec3& center, const vec3& up, float fovx, float fovy, int width, int height, FIBITMAP* bitmap, int recurse) {
     int count = 0;
-    for (float i = 0; i < height; i++) {
-        for (float j = 0; j < width; j++) {
-            glm::vec3 ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, i+.5, j+.5);
+    #pragma omp parallel for
+    for (int i = 0; i < height; i++) {
+        for (int j = 0; j < width; j++) {
+            glm::vec3 ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i+.5), static_cast<float>(j+.5));
             std::pair<Object*, vec3> i_result = calculateIntersection(eye, ray_direction);
             Object* i_obj = i_result.first;            
             glm::vec3 intersection = i_result.second; 
