@@ -33,55 +33,64 @@ void init() {
     ambient = glm::vec4(0.2, 0.2, 0.2, 1);
 }
 
-BoundingBox* findClosestBB(BoundingBox* source, std::vector<BoundingBox*> candidates) {
-  glm::vec3 source_center = source->getCenter();
-  float min_distance = std::numeric_limits<float>::max();
-  BoundingBox* closest;
-  for ( std::vector<BoundingBox*>::iterator it = candidates.begin(); it != candidates.end(); ++it ) {
-    float temp_dist = glm::dot(source_center-(*it)->getCenter(),source_center-(*it)->getCenter());
-    if (temp_dist < min_distance) {
-      closest = *it;
-      min_distance = temp_dist;
+BoundingBox* findClosestBB(BoundingBox* source, const std::vector<BoundingBox*>& candidates) {
+    glm::vec3 source_center = source->getCenter();
+    float min_distance = std::numeric_limits<float>::max();
+    BoundingBox* closest;
+    for ( std::vector<BoundingBox*>::const_iterator it = candidates.begin(); it != candidates.end(); ++it ) {
+        float temp_dist = glm::dot(source_center-(*it)->getCenter(),source_center-(*it)->getCenter());
+        if (temp_dist < min_distance) {
+            closest = *it;
+            min_distance = temp_dist;
+        }
     }
-  }
-  if (closest == NULL) {
-    std::cout << "ERROR: no closest Bounding Box found\n";
-    exit(1);
-  }
-  return closest;
+    if (closest == NULL) {
+        std::cout << "ERROR: no closest Bounding Box found\n";
+        exit(1);
+    }
+    return closest;
 }
 
 std::vector<BoundingBox*> BBTreeRecurse( std::vector<BoundingBox*> nodes ) {
-  if (nodes.size() == 1) {
-    return nodes;
-  }
-  std::vector<BoundingBox*> new_nodes;
-  std::vector<BoundingBox*> candidates = nodes;
-  for ( std::vector<BoundingBox*>::iterator it = nodes.begin(); it != nodes.end(); ++it ) {
-    if (candidates.size() > 1) {
-      std::vector<BoundingBox*>::iterator position = std::find(candidates.begin(), candidates.end(), *it);
-      if (position != candidates.end()) {
-          candidates.erase(position);
-      } else {
-          continue;
-      }
-      BoundingBox* closest_match = findClosestBB(*it, candidates);
-      new_nodes.push_back(new BoundingBox(*it, closest_match));
-      position = std::find(candidates.begin(), candidates.end(), closest_match);
-      if (position != candidates.end()) {
-          candidates.erase(position);
-      }
+    std::cout << "Current number of boxes: " << nodes.size() << std::endl;
+    if (nodes.size() == 1) {
+        return nodes;
     }
-  }
-  if (new_nodes.size() == nodes.size()) {
-    std::cout << "ERROR: new nodes size is same as old!\n";
-    exit(1);
-  }
-  return BBTreeRecurse(new_nodes);
+    std::vector<BoundingBox*> new_nodes;
+    std::vector<BoundingBox*> candidates(nodes);
+    for ( std::vector<BoundingBox*>::iterator it = nodes.begin(); it != nodes.end(); ++it ) {
+        if (candidates.size() > 1) {
+            std::vector<BoundingBox*>::iterator position = std::find(candidates.begin(), candidates.end(), *it);
+            if (position != candidates.end()) {
+                candidates.erase(position);
+            } else {
+                continue;
+            }
+            BoundingBox* closest_match = findClosestBB(*it, candidates);
+            new_nodes.push_back(new BoundingBox(*it, closest_match));
+            position = std::find(candidates.begin(), candidates.end(), closest_match);
+            if (position != candidates.end()) {
+                candidates.erase(position);
+            } else {
+                std::cerr << "Candidate that should have been in list is not" <<std::endl;
+                exit(1);
+            }
+        } else {
+            if (candidates.size() == 1) {
+                new_nodes.push_back(candidates[0]);
+                break;
+            }
+        }
+    }
+    if (new_nodes.size() == nodes.size()) {
+        std::cout << "ERROR: new nodes size (" << new_nodes.size() << ") is same as old!\n";
+        exit(1);
+    }
+    return BBTreeRecurse(new_nodes);
 }
 
 void createBBTree() {
-  root_box = BBTreeRecurse(boxes)[0];
+    root_box = BBTreeRecurse(boxes)[0];
 }
 
 int main(int argc, char* argv[]) {
@@ -96,10 +105,10 @@ int main(int argc, char* argv[]) {
     output = "temp.png";
     readfile(argv[1]) ;
     FIBITMAP* bitmap = FreeImage_Allocate(w, h, bpp);
-    float fovx = 2*glm::degrees(atan(tan(glm::radians((float)fovy/2))*((float)w/h))); 
+    float fovx = 2*glm::degrees(atan(tan(glm::radians((float)fovy/2))*((float)w/h)));
 
     createBBTree();
-    
+
     Raytrace rt;
     rt.raytrace(eye, center, up, fovx, fovy, w, h, bitmap, depth);
 

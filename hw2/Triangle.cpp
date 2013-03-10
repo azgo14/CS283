@@ -31,7 +31,7 @@ void Triangle::calculateTransform(void) {
         }
         glm::mat4 inverse_transpose = glm::transpose(glm::inverse(transform));
         for (int i = 0; i < 3; ++i) {
-            glm::vec3 normal = _normals[i];            
+            glm::vec3 normal = _normals[i];
             glm::vec4 homo_norm = glm::vec4(normal[0], normal[1], normal[2], 0);
             homo_norm = homo_norm * inverse_transpose;
             _t_normals[i] = glm::normalize(glm::vec3(homo_norm[0], homo_norm[1], homo_norm[2]));
@@ -46,13 +46,13 @@ std::pair<bool,vec3> Triangle::intersect(const vec3& origin, const vec3& directi
     vec3 normal = glm::normalize(glm::cross(p1 - p0, p2 - p0));
     GLfloat t = glm::dot((p0 - origin), normal)/glm::dot(direction, normal);
     if (t >= 0) {
-      vec3 ray = origin + direction * t;
-      bool hit = glm::dot(glm::cross(p1 - p0, ray - p0), normal) >= 0 &&
-                 glm::dot(glm::cross(p2 - p1, ray - p1), normal) >= 0 &&
-                 glm::dot(glm::cross(p0 - p2, ray - p2), normal) >= 0;
-      return std::make_pair(hit, ray);
+        vec3 ray = origin + direction * t;
+        bool hit = glm::dot(glm::cross(p1 - p0, ray - p0), normal) >= 0 &&
+                   glm::dot(glm::cross(p2 - p1, ray - p1), normal) >= 0 &&
+                   glm::dot(glm::cross(p0 - p2, ray - p2), normal) >= 0;
+        return std::make_pair(hit, ray);
     } else {
-      return std::make_pair(false, direction);
+        return std::make_pair(false, direction);
     }
 }
 
@@ -74,13 +74,13 @@ vec3 Triangle::getNormal(const vec3& intersect) {
 }
 
 std::pair<vec3, vec3> Triangle::getBoundingBoxDimensions() {
-  calculateTransform();
-  vec3 min, max;
-  for (int i = 0; i < 3; i++) {
-    float max_coord = std::max(std::max(_t_vertices[0][i], _t_vertices[1][i]), _t_vertices[2][i]);
-    float min_coord = std::min(std::min(_t_vertices[0][i], _t_vertices[1][i]), _t_vertices[2][i]);
-    max[i] = max_coord;
-    min[i] = min_coord;
-  }
-  return std::make_pair(min, max); 
+    calculateTransform();
+    vec3 min, max;
+    for (int i = 0; i < 3; i++) {
+        float max_coord = std::max(std::max(_t_vertices[0][i], _t_vertices[1][i]), _t_vertices[2][i]);
+        float min_coord = std::min(std::min(_t_vertices[0][i], _t_vertices[1][i]), _t_vertices[2][i]);
+        max[i] = max_coord;
+        min[i] = min_coord;
+    }
+    return std::make_pair(min, max);
 }

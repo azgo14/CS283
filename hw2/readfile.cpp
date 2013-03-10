@@ -86,7 +86,7 @@ void readfile(const char * filename) {
                             lightposn.push_back(glm::vec4(position.x, position.y, position.z, 0));
                         } else {
                             glm::vec4 position = glm::vec4(values[0], values[1], values[2], 1);
-                            position = position * transfstack.top();                            
+                            position = position * transfstack.top();
                             lightposn.push_back(glm::vec4(position.x/position.w, position.y/position.w, position.z/position.w, 1));
                         }
                         lightcolor.push_back(glm::vec4(values[3], values[4], values[5], 1));
@@ -181,7 +181,7 @@ void readfile(const char * filename) {
                         vertices.push_back(glm::vec3(values[0], values[1], values[2]));
                         normals.push_back(glm::vec3(values[3], values[4], values[5]));
                     }
-                } else if (cmd == "sphere" || cmd == "tri" || cmd == "trinormal") {                    
+                } else if (cmd == "sphere" || cmd == "tri" || cmd == "trinormal") {
                     if (cmd == "sphere") {
                         validinput = readvals(s, 4, values);
                         if (validinput) {
@@ -272,7 +272,7 @@ void readfile(const char * filename) {
         // As well as booleans
 
         eye = eyeinit ;
-        up = upinit ;        
+        up = upinit ;
     }
     else {
         cerr << "Unable to Open Input Data File " << filename << "\n" ;
