@@ -119,7 +119,7 @@ glm::vec4 Raytrace::calculateColor(Object * obj, const vec3& intersection, const
     vec3 normal = obj->getNormal(intersection);
     vec3 direction, halfAngle;
     float distance;
-    float increment = .0001;
+    float increment = .001;
 
     for (int i = 0; i < lightposn.size(); i++) {
         // shadow
