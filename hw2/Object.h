@@ -25,6 +25,7 @@ public:
     vec4 _emission ;
     GLfloat _shininess ;
     glm::mat4 transform ;
+    bool isLight;
 };
 
 #endif

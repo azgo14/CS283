@@ -77,19 +77,18 @@ void readfile(const char * filename) {
                 bool validinput ; // validity of input
 
                 // Lights
-                if (cmd == "directional" || cmd == "point") {
-                    validinput = readvals(s, 6, values);
+                if (cmd == "area") {
+                    validinput = readvals(s, 3, values);
                     if (validinput) {
-                        if (cmd == "directional") {
-                            glm::vec4 position = glm::vec4(values[0], values[1], values[2], 0);
-                            position = position * transfstack.top();
-                            lightposn.push_back(glm::vec4(position.x, position.y, position.z, 0));
-                        } else {
-                            glm::vec4 position = glm::vec4(values[0], values[1], values[2], 1);
-                            position = position * transfstack.top();
-                            lightposn.push_back(glm::vec4(position.x/position.w, position.y/position.w, position.z/position.w, 1));
-                        }
-                        lightcolor.push_back(glm::vec4(values[3], values[4], values[5], 1));
+                        AreaLight* obj = new AreaLight(vertices[values[0]], vertices[values[1]], vertices[values[2]]);
+                        obj->_ambient = ambient;
+                        obj->_diffuse = diffuse;
+                        obj->_specular = specular;
+                        obj->_emission = emission;
+                        obj->_shininess = shininess ;
+                        obj->transform = transfstack.top() ;
+                        boxes.push_back(new BoundingBox(obj));
+                        lights.push_back(obj);
                     }
                 } else if (cmd == "attenuation") {
                     validinput = readvals(s, 3, values);

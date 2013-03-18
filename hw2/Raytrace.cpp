@@ -57,10 +57,35 @@ std::pair<Object*, vec3> calculateIntersection(const vec3& eye, const vec3& ray_
     }
     return std::make_pair(i_obj, intersection);
 }
+
+// Returns true if in shadow
+bool checkInShadow(vec3 shadow_origin, vec3 shadow_direction, float dist_to_light) {
+    std::vector<std::pair<Object*, vec3> > prunned_objects;
+    getPrunnedObjs(root_box, shadow_origin, shadow_direction, &prunned_objects);
+
+    for (std::vector<std::pair<Object*, vec3> >::iterator it = prunned_objects.begin(); it != prunned_objects.end(); ++it) {
+        if (it->first->isLight) {
+            //std::cout <<"Hit light" <<std::endl;
+            continue;
+        }
+        std::pair<bool, glm::vec3> result = (it->first)->intersect(shadow_origin, shadow_direction);
+        if (result.first) {
+            vec3 diff_vec = glm::vec3(result.second.x - shadow_origin.x,
+                                      result.second.y - shadow_origin.y,
+                                      result.second.z - shadow_origin.z);
+            float diff_dist = glm::dot(diff_vec, diff_vec);
+            if (diff_dist < dist_to_light) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
+} // namespace
+
 void Raytrace::raytrace (const vec3& eye, const vec3& center, const vec3& up, float fovx, float fovy, int width, int height, FIBITMAP* bitmap, int recurse) {
     int count = 0;
-    #pragma omp parallel for
+    //#pragma omp parallel for
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             glm::vec3 ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
@@ -70,7 +95,11 @@ void Raytrace::raytrace (const vec3& eye, const vec3& center, const vec3& up, fl
             Object* i_obj = i_result.first;
             glm::vec3 intersection = i_result.second;
             if (i_obj != NULL) {
-                vec4 phongColor = calculateColor(i_obj, intersection, eye, recurse);
+                vec4 phongColor = vec4(0,0,0,0);
+                for (int ray_i = 0; ray_i < ray_per_pixel; ++ray_i) {
+                    phongColor += (1 / static_cast<float>(ray_per_pixel)) * calculateColor(i_obj, intersection, eye, recurse);
+                }
+                
                 RGBQUAD color;
                 color.rgbBlue = 255 * phongColor.x;
                 color.rgbGreen = 255 * phongColor.y;
@@ -106,75 +135,53 @@ glm::vec4 phongIllumination(const vec3& normal, const vec3& direction, const vec
     }
     float shine = glm::pow(nDotH, obj_shininess);
     vec4 specularTerm = glm::vec4(obj_specular.x * shine, obj_specular.y * shine, obj_specular.z * shine, obj_specular.w * shine);
-    if (distance == 0) {  // directional lights have no attenuation.
-        return lightcolor * (diffuseTerm + specularTerm);
-    } else {
-        return (lightcolor / (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance)) * (diffuseTerm + specularTerm);
-    }
+    
+    return (lightcolor / (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance)) * (diffuseTerm + specularTerm);
+
 }
 
 glm::vec4 Raytrace::calculateColor(Object * obj, const vec3& intersection, const vec3& eye, int recurse) {
+    if (obj->isLight) {
+        return obj->_emission;
+    }
     vec4 finalcolor = vec4(0, 0, 0, 0);
     vec3 eyedir = glm::normalize(eye-intersection);
     vec3 normal = obj->getNormal(intersection);
-    vec3 direction, halfAngle;
+    vec3 shadow_direction, halfAngle;
     float distance;
     float increment = .001;
-
-    for (int i = 0; i < lightposn.size(); i++) {
+    //std::cout<<"Num of Lights: " << lights.size()<<std::endl;
+    for (int i = 0; i < lights.size(); i++) {
         // shadow
-        bool shadow = false;
-        vec4 lightpos = lightposn[i];
-        if (lightpos.w == 0) {
-            direction = glm::normalize(glm::vec3(lightpos[0],lightpos[1],lightpos[2]));
-            vec3 temp_inter = intersection + increment * direction;
-            std::vector<std::pair<Object*, vec3> > prunned_objects;
-            getPrunnedObjs(root_box, temp_inter, direction, &prunned_objects);
-            for (std::vector<std::pair<Object*, vec3> >::iterator it = prunned_objects.begin(); it != prunned_objects.end(); ++it) {
-                std::pair<bool, glm::vec3> result = (it->first)->intersect(temp_inter, direction);
-                if (result.first) {
-                    shadow = true;
-                    break;
-                }
-            }
-            if (shadow) {
-                continue;
-            }
-            halfAngle = glm::normalize(direction + eyedir);
-            distance = 0;
-        } else {
-            vec3 dir_vec = glm::vec3(lightpos[0] - intersection.x,
-                                     lightpos[1] - intersection.y,
-                                     lightpos[2] - intersection.z);
-            direction = glm::normalize(dir_vec);
-            vec3 temp_inter = intersection + increment * direction;
-            float true_dist = glm::dot(dir_vec,dir_vec);
-            std::vector<std::pair<Object*, vec3> > prunned_objects;
-            getPrunnedObjs(root_box, temp_inter, direction, &prunned_objects);
-
-            for (std::vector<std::pair<Object*, vec3> >::iterator it = prunned_objects.begin(); it != prunned_objects.end(); ++it) {
-                std::pair<bool, glm::vec3> result = (it->first)->intersect(temp_inter, direction);
-                if (result.first) {
-                    vec3 diff_vec = glm::vec3(result.second.x - temp_inter.x,
-                                              result.second.y - temp_inter.y,
-                                              result.second.z - temp_inter.z);
-                    float diff_dist = glm::dot(diff_vec, diff_vec);
-                    if (diff_dist < true_dist) {
-                        shadow = true;
-                        break;
-                    }
-                }
-            }
-            if (shadow) {
-                continue;
-            }
-            halfAngle = glm::normalize(direction + eyedir);
-            distance = sqrt(true_dist);
+        vec4 lightpos = lights[i]->getLightPosn();
+        //std::cout << "Light Posn: " << lightpos.x << " " <<  lightpos.y << " " << lightpos.z << std::endl;
+        // area lighting
+        vec3 dir_vec = glm::vec3(lightpos[0] - intersection.x,
+                                 lightpos[1] - intersection.y,
+                                 lightpos[2] - intersection.z);
+        shadow_direction = glm::normalize(dir_vec);
+        vec3 shadow_origin = intersection + increment * shadow_direction;
+        float dist_to_light = glm::dot(dir_vec,dir_vec);
+        //std::cout << "Shadow Origin: " << shadow_origin.x << " " << shadow_origin.y << " " << shadow_origin.z << std::endl;
+        //std::cout << "Distance to Light " << dist_to_light << std::endl;
+        if (checkInShadow(shadow_origin, shadow_direction, dist_to_light)) {            
+            continue;
         }
-        vec4 color = lightcolor[i];
-        finalcolor += phongIllumination(normal, direction, halfAngle, color, distance, obj->_diffuse, obj->_specular, obj->_shininess);
+        
+        halfAngle = glm::normalize(shadow_direction + eyedir);
+        distance = sqrt(dist_to_light);
+        
+        vec4 color = lights[i]->_emission;
+        
+        finalcolor += .5 * phongIllumination(normal, shadow_direction, halfAngle, color, distance, obj->_diffuse, obj->_specular, obj->_shininess);
+
+        //std::cout<< finalcolor.x << " " << finalcolor.y << " " <<finalcolor.z << std::endl;
+        
     }
+    
     finalcolor += obj->_ambient + obj->_emission;
+
+    //std::cout<< finalcolor.x << " " << finalcolor.y << " " <<finalcolor.z << std::endl;
 
     if (recurse > 0) {  // This is for reflection
         float times = 2 * glm::dot(eyedir, normal);

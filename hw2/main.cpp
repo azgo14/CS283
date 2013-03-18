@@ -14,6 +14,7 @@
 #include <GL/glut.h>
 #include "Transform.h"
 #include <FreeImage.h>
+#include <unistd.h>
 
 using namespace std ;
 
@@ -93,22 +94,61 @@ void createBBTree() {
     root_box = BBTreeRecurse(boxes)[0];
 }
 
-int main(int argc, char* argv[]) {
+namespace {
+void usage() {
+    std::cout << "USAGE: ./transform -s SCENE_FILE [optional options]" << std::endl
+              << "\tOPTIONAL OPTIONS:" << std::endl
+              << "\t[-r rays_per_pixel]\tRay traced per pixel [DEFAULT: 5]" << std::endl
+              << "\t[-d direct]\t\tSpecify flag to output only direct light scene" << std::endl
+              << "\t[-i indirect]\t\tSpecify flag to output only indirect light scene" << std::endl;
+}
+} // namespace
 
-    if (argc < 2) {
-        cerr << "Usage: transforms scenefile \n";
+void areaLightTest() {
+    AreaLight test = AreaLight(vec3(-1,1,1), vec3(-1,-1,1), vec3(1,1,1));
+    vec4 position = test.getLightPosn();
+    std::cout << "Point in triangle: " << position[0] << " " << position[1] << " " << position[2] << " " << position[3] << std::endl;
+}
+void tests() {
+    areaLightTest();
+}
+
+int main(int argc, char* argv[]) {
+    //tests();
+    int option;
+    char * filename = NULL;
+    while ((option = getopt(argc, argv, "r:s:d:i:")) != -1) {
+        switch (option) {
+        case 'r':
+            ray_per_pixel = atoi(optarg);
+            break;
+        case 's':
+            filename = optarg;
+            break;
+        case 'd':
+            indirect = false;
+            break;
+        case 'i':
+            direct = false;
+            break;
+        default:
+            usage();
+            exit(1);
+        }
+    }
+    if (filename == NULL) {
+        usage();
         exit(-1);
     }
 
     FreeImage_Initialise();
     init();
     output = "temp.png";
-    readfile(argv[1]) ;
+    readfile(filename) ;
     FIBITMAP* bitmap = FreeImage_Allocate(w, h, bpp);
     float fovx = 2*glm::degrees(atan(tan(glm::radians((float)fovy/2))*((float)w/h)));
 
     createBBTree();
-
     Raytrace rt;
     rt.raytrace(eye, center, up, fovx, fovy, w, h, bitmap, depth);
 

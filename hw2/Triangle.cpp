@@ -9,6 +9,7 @@ Triangle::Triangle(vec3 vert1, vec3 vert2, vec3 vert3, vec3 norm1, vec3 norm2, v
     _normals[1] = norm2;
     _normals[2] = norm3;
     _type = trinorm;
+    isLight = false;    
 }
 Triangle::Triangle(vec3 vert1, vec3 vert2, vec3 vert3) {
     _vertices[0] = vert1;
@@ -18,6 +19,7 @@ Triangle::Triangle(vec3 vert1, vec3 vert2, vec3 vert3) {
     _normals[0] = glm::normalize(glm::cross(vert2 - vert1, vert3 - vert1));
     _normals[1] = _normals[0];
     _normals[2] = _normals[0];
+    isLight = false;    
 }
 
 // Note that this way of doing transformations is not the same as in lecture but this way is faster ONLY when we generate pictures. Can't handle animation because we calculate only once.

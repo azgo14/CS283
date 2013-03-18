@@ -1,0 +1,111 @@
+#Cornell Box
+size 480 480
+camera 0 0 3 0 0 0 0 1 0 45
+output cornell.bmp
+
+maxdepth 5
+
+
+
+maxverts 12
+#cube
+vertex -1 +1 +1
+vertex +1 +1 +1
+vertex -1 -1 +1
+vertex +1 -1 +1
+
+vertex -1 +1 -1
+vertex +1 +1 -1
+vertex -1 -1 -1
+vertex +1 -1 -1
+
+
+ambient 0 0 0
+specular 0 0 0
+shininess 1
+emission 0 0 0
+diffuse 0 0 0
+
+attenuation 1 0.1 0.05
+
+#area light
+pushTransform
+emission 1 1 1
+scale .4 1 .4 
+translate 0 -.12 .4
+area 4 5 1 
+area 4 1 0 
+popTransform
+
+emission 0 0 0
+
+
+diffuse 0 0 1
+#sphere 0 0.8 -1.5 0.1
+
+
+#red
+pushTransform
+diffuse 1 0 0
+scale 1 10 10 
+translate .1 0 0
+tri 0 6 4
+tri 0 2 6
+popTransform
+
+#green
+pushTransform
+diffuse 0 1 0
+scale 1 10 10 
+translate -.1 0 0
+tri 7 3 5 
+tri 5 3 1 
+popTransform
+
+#back
+pushTransform
+diffuse 1 1 1
+scale 10 10 1 
+translate 0 0 .1
+tri 4 6 5 
+tri 5 6 7 
+popTransform
+
+#top
+pushTransform
+diffuse 1 1 1
+scale 10 1 10 
+translate 0 -.1 0
+tri 4 5 1
+tri 4 1 0
+popTransform
+
+#bottom
+pushTransform
+diffuse 1 1 1
+scale 10 1 10
+translate 0 .1 0
+tri 6 3 7
+tri 6 2 3
+popTransform
+
+#sphere1
+diffuse 0.7 0.5 0.2 
+specular 0.2 0.2 0.2 
+pushTransform
+translate -.5 -.6 .2
+scale 0.3 0.3 0.3
+sphere 0 0 0 1 
+popTransform
+
+#sphere2
+diffuse 0.7 0.5 0.2
+specular 0.2 0.2 0.2
+pushTransform
+translate 0.5 -0.6 -.2
+scale 0.3 0.3 0.3
+sphere 0 0 0 1
+popTransform
+
+
+

@@ -15,8 +15,8 @@ endif
 
 RM = /bin/rm -f 
 all: transform
-transform: main.o Transform.o readfile.o Raytrace.o variables.h readfile.h shaders.h Transform.h Raytrace.h Object.h Triangle.h Triangle.o Sphere.h Sphere.o BoundingBox.h BoundingBox.o
-	$(CC) $(CFLAGS) -o transforms main.o Transform.o readfile.o Raytrace.o Triangle.o Sphere.o BoundingBox.o $(INCFLAGS) $(LDFLAGS) 
+transform: main.o Transform.o readfile.o Raytrace.o variables.h readfile.h shaders.h Transform.h Raytrace.h Object.h Light.h Light.o Triangle.h Triangle.o Sphere.h Sphere.o BoundingBox.h BoundingBox.o
+	$(CC) $(CFLAGS) -o transforms main.o Transform.o readfile.o Raytrace.o Triangle.o Light.o Sphere.o BoundingBox.o $(INCFLAGS) $(LDFLAGS) 
 main.o: main.cpp Transform.h variables.h Raytrace.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c main.cpp
 readfile.o: readfile.cpp readfile.h variables.h 
@@ -27,6 +27,8 @@ Raytrace.o: Raytrace.cpp Raytrace.h variables.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c Raytrace.cpp
 Triangle.o: Triangle.cpp Triangle.h Object.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c Triangle.cpp
+Light.o: Light.cpp Light.h Triangle.h Object.h
+	$(CC) $(CFLAGS) $(INCFLAGS) -c Light.cpp
 Sphere.o: Sphere.cpp Sphere.h Object.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c Sphere.cpp
 BoundingBox.o: BoundingBox.cpp BoundingBox.h Object.h

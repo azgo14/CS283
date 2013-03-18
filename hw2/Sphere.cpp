@@ -7,6 +7,7 @@ Sphere::Sphere(GLfloat pos1, GLfloat pos2, GLfloat pos3, GLfloat rad) {
     _position[2] = pos3;
     _radius = rad;
     _type = sphere;
+    isLight = false;
 }
 
 std::pair<bool,vec3> Sphere::intersect(const vec3& origin, const vec3& direction) {

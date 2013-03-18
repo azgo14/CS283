@@ -18,7 +18,7 @@ public:
     vec3 getNormal(const vec3& intersect);
     std::pair<vec3, vec3> getBoundingBoxDimensions();
 
-private:
+protected:
     vec3 _vertices[3];
     vec3 _normals[3];
     vec3 _t_vertices[3];

@@ -12,6 +12,7 @@
 #include "Sphere.h"
 #include "Triangle.h"
 #include "BoundingBox.h"
+#include "Light.h"
 
 #ifdef MAINPROGRAM
 #define EXTERN
@@ -31,6 +32,9 @@ int bpp = 24; // bits per pixel RGB. we have three 8 bit numbers
 int w = 600, h = 400 ; // width and height
 int depth = 5;
 float fovy = 90.0 ; // For field of view
+int ray_per_pixel = 5;
+bool direct = true;
+bool indirect = true;
 #else
 EXTERN vec3 eyeinit ;
 EXTERN vec3 upinit ;
@@ -38,6 +42,9 @@ EXTERN vec3 center ;
 EXTERN int w, h ;
 EXTERN float fovy ;
 EXTERN int depth ;
+EXTERN int ray_per_pixel;
+EXTERN bool indirect;
+EXTERN bool direct;
 #endif
 
 EXTERN std::string output;
@@ -48,9 +55,7 @@ static enum {view, translate, scale} transop ; // which operation to transform
 EXTERN float sx, sy ; // the scale in x and y
 EXTERN float tx, ty ; // the translation in x and y
 
-EXTERN std::vector<glm::vec4> lightposn ;
-EXTERN std::vector<glm::vec4> lightcolor ;
-EXTERN std::vector<glm::vec4> lighttrasnf ;
+EXTERN std::vector<Light *> lights;
 EXTERN vec3 attenuation ;
 EXTERN glm::vec4 ambient ;
 
