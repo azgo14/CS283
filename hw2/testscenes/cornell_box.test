@@ -90,7 +90,6 @@ popTransform
 
 #sphere1
 diffuse 0.7 0.5 0.2 
-specular 0.2 0.2 0.2 
 pushTransform
 translate -.5 -.6 .2
 scale 0.3 0.3 0.3
@@ -99,7 +98,6 @@ popTransform
 
 #sphere2
 diffuse 0.7 0.5 0.2
-specular 0.2 0.2 0.2
 pushTransform
 translate 0.5 -0.6 -.2
 scale 0.3 0.3 0.3

@@ -88,7 +88,7 @@ bool checkInShadow(vec3 shadow_origin, vec3 shadow_direction, float dist_to_ligh
 
 void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, float fovx, float fovy, int width, int height, FIBITMAP* bitmap, int recurse) {
     int count = 0;
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
             glm::vec3 ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
