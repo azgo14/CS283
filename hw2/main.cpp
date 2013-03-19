@@ -22,7 +22,7 @@ using namespace std ;
 #define MAINPROGRAM
 #include "variables.h"
 #include "readfile.h" // prototypes for readfile.cpp  
-#include "Raytrace.h"
+#include "Pathtrace.h"
 
 void saveScreenshot(FIBITMAP* img, string fname) {
     std::cout << "Saving screenshot: " << fname << "\n";
@@ -31,7 +31,6 @@ void saveScreenshot(FIBITMAP* img, string fname) {
 
 void init() {
     attenuation = glm::vec3(1, 0, 0);
-    ambient = glm::vec4(0.2, 0.2, 0.2, 1);
 }
 
 BoundingBox* findClosestBB(BoundingBox* source, const std::vector<BoundingBox*>& candidates) {
@@ -149,8 +148,8 @@ int main(int argc, char* argv[]) {
     float fovx = 2*glm::degrees(atan(tan(glm::radians((float)fovy/2))*((float)w/h)));
 
     createBBTree();
-    Raytrace rt;
-    rt.raytrace(eye, center, up, fovx, fovy, w, h, bitmap, depth);
+    Pathtrace rt;
+    rt.pathtrace(eye, center, up, fovx, fovy, w, h, bitmap, depth);
 
     saveScreenshot(bitmap, output);
     FreeImage_DeInitialise();

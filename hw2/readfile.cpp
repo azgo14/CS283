@@ -81,7 +81,6 @@ void readfile(const char * filename) {
                     validinput = readvals(s, 3, values);
                     if (validinput) {
                         AreaLight* obj = new AreaLight(vertices[values[0]], vertices[values[1]], vertices[values[2]]);
-                        obj->_ambient = ambient;
                         obj->_diffuse = diffuse;
                         obj->_specular = specular;
                         obj->_emission = emission;
@@ -95,12 +94,7 @@ void readfile(const char * filename) {
                     if (validinput) {
                         attenuation = glm::vec3(values[0], values[1], values[2]);
                     }
-                } else if (cmd == "ambient") {
-                    validinput = readvals(s, 3, values) ; // colors
-                    if (validinput) {
-                        ambient = glm::vec4(values[0], values[1], values[2], 1);
-                    }
-                }
+                } 
                 // Materials
                 else if (cmd == "diffuse") {
                     validinput = readvals(s, 3, values) ;
@@ -185,7 +179,6 @@ void readfile(const char * filename) {
                         validinput = readvals(s, 4, values);
                         if (validinput) {
                             Sphere* obj = new Sphere(values[0], values[1], values[2], values[3]);
-                            obj->_ambient = ambient;
                             obj->_diffuse = diffuse ;
                             obj->_specular = specular ;
                             obj->_emission = emission ;
@@ -197,7 +190,6 @@ void readfile(const char * filename) {
                         validinput = readvals(s, 3, values);
                         if (validinput) {
                             Triangle* obj = new Triangle(vertices[values[0]], vertices[values[1]], vertices[values[2]]);
-                            obj->_ambient = ambient;
                             obj->_diffuse = diffuse;
                             obj->_specular = specular;
                             obj->_emission = emission;
@@ -210,7 +202,6 @@ void readfile(const char * filename) {
                         if (validinput) {
                             Triangle* obj = new Triangle(vertices[values[0]], vertices[values[1]], vertices[values[2]],
                                                          normals[values[0]], normals[values[1]], normals[values[2]]);
-                            obj->_ambient = ambient;
                             obj->_diffuse = diffuse;
                             obj->_specular = specular;
                             obj->_emission = emission;

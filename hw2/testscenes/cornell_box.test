@@ -20,7 +20,6 @@ vertex -1 -1 -1
 vertex +1 -1 -1
 
 
-ambient 0 0 0
 specular 0 0 0
 shininess 1
 emission 0 0 0

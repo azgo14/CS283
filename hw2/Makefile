@@ -15,16 +15,16 @@ endif
 
 RM = /bin/rm -f 
 all: transform
-transform: main.o Transform.o readfile.o Raytrace.o variables.h readfile.h shaders.h Transform.h Raytrace.h Object.h Light.h Light.o Triangle.h Triangle.o Sphere.h Sphere.o BoundingBox.h BoundingBox.o
-	$(CC) $(CFLAGS) -o transforms main.o Transform.o readfile.o Raytrace.o Triangle.o Light.o Sphere.o BoundingBox.o $(INCFLAGS) $(LDFLAGS) 
-main.o: main.cpp Transform.h variables.h Raytrace.h
+transform: main.o Transform.o readfile.o Pathtrace.o variables.h readfile.h shaders.h Transform.h Pathtrace.h Object.h Light.h Light.o Triangle.h Triangle.o Sphere.h Sphere.o BoundingBox.h BoundingBox.o
+	$(CC) $(CFLAGS) -o transforms main.o Transform.o readfile.o Pathtrace.o Triangle.o Light.o Sphere.o BoundingBox.o $(INCFLAGS) $(LDFLAGS) 
+main.o: main.cpp Transform.h variables.h Pathtrace.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c main.cpp
 readfile.o: readfile.cpp readfile.h variables.h 
 	$(CC) $(CFLAGS) $(INCFLAGS) -c readfile.cpp
 Transform.o: Transform.cpp Transform.h 
 	$(CC) $(CFLAGS) $(INCFLAGS) -c Transform.cpp  
-Raytrace.o: Raytrace.cpp Raytrace.h variables.h
-	$(CC) $(CFLAGS) $(INCFLAGS) -c Raytrace.cpp
+Pathtrace.o: Pathtrace.cpp Pathtrace.h variables.h
+	$(CC) $(CFLAGS) $(INCFLAGS) -c Pathtrace.cpp
 Triangle.o: Triangle.cpp Triangle.h Object.h
 	$(CC) $(CFLAGS) $(INCFLAGS) -c Triangle.cpp
 Light.o: Light.cpp Light.h Triangle.h Object.h

@@ -57,7 +57,6 @@ EXTERN float tx, ty ; // the translation in x and y
 
 EXTERN std::vector<Light *> lights;
 EXTERN vec3 attenuation ;
-EXTERN glm::vec4 ambient ;
 
 // Materials (read from file)
 // With multiple objects, these are colors for each.
@@ -82,15 +81,4 @@ EXTERN std::vector<vec3> vertices;
 EXTERN std::vector<vec3> normals;
 EXTERN int maxvertnorms;
 EXTERN int maxverts;
-
-// Variables to set uniform params for lighting fragment shader
-EXTERN GLuint lightcol ;
-EXTERN GLuint lightpos ;
-EXTERN GLuint numusedcol ;
-EXTERN GLuint enablelighting ;
-EXTERN GLuint ambientcol ;
-EXTERN GLuint diffusecol ;
-EXTERN GLuint specularcol ;
-EXTERN GLuint emissioncol ;
-EXTERN GLuint shininesscol ;
 

@@ -19,7 +19,6 @@ public:
     virtual std::pair<vec3, vec3> getBoundingBoxDimensions() {};
 
     shape _type ;
-    vec4 _ambient;
     vec4 _diffuse ;
     vec4 _specular ;
     vec4 _emission ;
