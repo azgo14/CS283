@@ -140,6 +140,19 @@ glm::vec4 phongIllumination(const vec3& normal, const vec3& direction, const vec
 
 }
 
+namespace {
+vec3 sampleFromHemiSphereUniform(vec3 hemisphere_normal) {
+    float theta, azm;
+    vec3 point;
+    do {
+        theta = (rand() / static_cast<float>(RAND_MAX)) * M_PI;
+        azm = (rand() / static_cast<float>(RAND_MAX)) * 2 * M_PI;
+        point = vec3(sin(theta)*cos(azm), sin(theta)*sin(azm), cos(theta));
+    } while (glm::dot(point, hemisphere_normal) <= 0);
+    return point;
+}
+} // namespace
+
 glm::vec4 Raytrace::calculateColor(Object * obj, const vec3& intersection, const vec3& eye, int recurse) {
     if (obj->isLight) {
         return obj->_emission;
