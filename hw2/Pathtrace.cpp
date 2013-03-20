@@ -198,7 +198,7 @@ void Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
         halfAngle = glm::normalize(shadow_direction + eyedir);
         distance = sqrt(dist_to_light);
         
-        vec4 color = lights[i]->_emission / (attenuation.x + attenuation.y * distance ); // attenuation for area lights (TODO: look up if this is right)
+        vec4 color = lights[i]->_emission / (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance ); // attenuation for area lights (TODO: look up if this is right)
         
         (*finalcolor) += .5 * reflect_weight * phongDiffuse(normal, shadow_direction,
                                                             color, obj->_diffuse);
