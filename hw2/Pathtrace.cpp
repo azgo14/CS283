@@ -284,7 +284,8 @@ void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec
     }
     
     if (obj->isLight) {
-        (*finalcolor) += emission_weight * obj->_emission;
+        (*finalcolor) += obj->_emission;
+        std::cout << finalcolor->x << std::endl;
     } else if (getRandomProb() < emission_prob || recurse <= 0) {
         if (recurse <= 0) {
             emission_weight = 1;
