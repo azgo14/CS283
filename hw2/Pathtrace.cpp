@@ -84,10 +84,18 @@ bool checkInShadow(vec3 shadow_origin, vec3 shadow_direction, float dist_to_ligh
     }
     return false;
 }
+
+void output_info() {
+    std::cout << "Starting Pathtracing" << std::endl
+              << "Direct Lighting: " << ((direct) ? "true" : "false") << std::endl
+              << "Indirect Lighting: " << ((indirect) ? "true" : "false") << std::endl
+              << "Uniform: " << ((uniform) ? "true" : "false") << std::endl;
+}
 } // namespace
 
 void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, float fovx, float fovy, int width, int height, FIBITMAP* bitmap, int recurse) {
     int count = 0;
+    output_info();
     #pragma omp parallel for
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
