@@ -146,14 +146,10 @@ glm::vec3 Pathtrace::calculateRay(const vec3& eye, const vec3& center, const vec
 
 namespace {
 float inv_pi = 1 / M_PI;
-glm::vec4 phongDiffuse(const vec3& normal, const vec3& direction, const vec4& color,
-                       const vec4& obj_diffuse) {
-    float nDotL = glm::dot(normal, direction);
-    if (nDotL < 0) {
-        nDotL = 0;
-    }
-    vec4 diffuseTerm = glm::vec4(obj_diffuse.x * nDotL, obj_diffuse.y * nDotL,
-                                 obj_diffuse.z * nDotL, obj_diffuse.w * nDotL);
+glm::vec4 phongDiffuse(const vec4& color, const vec4& obj_diffuse) {
+
+    vec4 diffuseTerm = glm::vec4(obj_diffuse.x, obj_diffuse.y,
+                                 obj_diffuse.z, obj_diffuse.w);
     
     return color * inv_pi * diffuseTerm ;
 
@@ -198,10 +194,9 @@ void Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
         halfAngle = glm::normalize(shadow_direction + eyedir);
         distance = sqrt(dist_to_light);
         
-        vec4 color = lights[i]->_emission / (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance ); // attenuation for area lights (TODO: look up if this is right)
+        vec4 color = lights[i]->getColor(normal, shadow_direction, distance); // attenuation for area lights (TODO: look up if this is right)
         
-        (*finalcolor) += .5 * reflect_weight * phongDiffuse(normal, shadow_direction,
-                                                            color, obj->_diffuse);
+        (*finalcolor) += .5 * reflect_weight * phongDiffuse(color, obj->_diffuse);
         (*finalcolor) += .5 * reflect_weight * phongSpecular(normal, shadow_direction, halfAngle,
                                                              color, obj->_specular,
                                                              obj->_shininess);
@@ -265,8 +260,7 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
     
     if (getRandomProb() < diffuse_prob) {
         //diffuse
-        (*finalcolor) += reflect_weight * diffuse_weight * phongDiffuse(normal, new_dir,
-                                                                        color, obj->_diffuse);                                                                        
+        (*finalcolor) += reflect_weight * diffuse_weight * phongDiffuse(color, obj->_diffuse);                                                                        
     } else {
         //specular        
         vec3 halfAngle = glm::normalize(new_dir + eyedir);

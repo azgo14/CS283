@@ -7,6 +7,8 @@ Light::Light(vec3 vert1, vec3 vert2, vec3 vert3) : Triangle(vert1, vert2, vert3)
 }
 
 AreaLight::AreaLight(vec3 vert1, vec3 vert2, vec3 vert3) : Light(vert1, vert2, vert3) {
+    vec3 inter_area = glm::cross(vert2 - vert1, vert3 - vert1);
+    _area = sqrt(glm::dot(inter_area,inter_area)) / 2; 
 }
 
 namespace {
@@ -41,4 +43,19 @@ vec4 AreaLight::getLightPosn() {
         point = _t_vertices[0] + u1 * (_t_vertices[1] - _t_vertices[0]) + u2 * (_t_vertices[2] - _t_vertices[1]);
     } while (!inArea(point, _t_vertices[0], _t_vertices[1], _t_vertices[2]));
     return vec4(point,1);
+}
+
+vec4 AreaLight::getColor(const vec3& normal, const vec3& dir_to_light, float distance) {
+    if (!transformed) {
+        calculateTransform();
+    }
+    float area_n_dot_l = glm::dot(_t_normals[0], -dir_to_light);
+    if (area_n_dot_l < 0) {
+        area_n_dot_l = 0;
+    }
+    float n_dot_l = glm::dot(normal, dir_to_light);
+    if (n_dot_l < 0) {
+        n_dot_l = 0;
+    }
+    return (_emission * n_dot_l * area_n_dot_l * _area ) / (distance * distance);
 }
