@@ -17,8 +17,8 @@ public:
     glm::vec3 calculateRay(const vec3& eye, const vec3& center,
                            const vec3& up, float fovx, float fovy,
                            int width, int height, float i, float j);
-    glm::vec4 calculateColor(Object * obj, const vec3& intersect,
-                             const vec3& eye, int recurse);
+    void calculateColor(Object * obj, const vec3& intersect,
+                             const vec3& eye, int recurse, vec4 *finalcolor);
 private:
     void getDirectLight(Object * obj, const vec3& intersection,
                         const vec3& eye, const vec3& eyedir,
