@@ -247,15 +247,13 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
     vec3 new_dir; // TODO: check if always normalized
     vec3 temp_start;
     std::pair<Object*, vec3> i_result;
-    do {
-        new_dir = sampleFromHemiSphereUniform(normal);
-        temp_start = intersection + INCREMENT * new_dir;
-        i_result = calculateIntersection(temp_start, new_dir);
-        if (i_result.first == NULL) {
-            //std::cout << "No objects intersected" << std::endl;
-            return;
-        }
-    } while (i_result.first->isLight); // indirect so don't want direct light
+    new_dir = sampleFromHemiSphereUniform(normal);
+    temp_start = intersection + INCREMENT * new_dir;
+    i_result = calculateIntersection(temp_start, new_dir);
+    if (i_result.first == NULL) {
+        //std::cout << "No objects intersected" << std::endl;
+        return;
+    }
     vec4 color = vec4(0,0,0,0);
     calculateColor(i_result.first, i_result.second, temp_start, recurse - 1, &color);
     
@@ -290,6 +288,7 @@ void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec
     }
     
     if (obj->isLight) {
+        //std::cout << "here"<<std::endl;
         (*finalcolor) += obj->_emission;
     } else if (getRandomProb() < emission_prob || recurse <= 0) {
         if (recurse <= 0) {
