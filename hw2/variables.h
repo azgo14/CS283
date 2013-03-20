@@ -35,6 +35,7 @@ float fovy = 90.0 ; // For field of view
 int ray_per_pixel = 5;
 bool direct = true;
 bool indirect = true;
+bool uniform = false;
 #else
 EXTERN vec3 eyeinit ;
 EXTERN vec3 upinit ;
@@ -45,6 +46,7 @@ EXTERN int depth ;
 EXTERN int ray_per_pixel;
 EXTERN bool indirect;
 EXTERN bool direct;
+EXTERN bool uniform;
 #endif
 
 EXTERN std::string output;

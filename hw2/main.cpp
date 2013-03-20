@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
     //tests();
     int option;
     char * filename = NULL;
-    while ((option = getopt(argc, argv, "r:s:d:i:")) != -1) {
+    while ((option = getopt(argc, argv, "r:s:d:i:u")) != -1) {
         switch (option) {
         case 'r':
             ray_per_pixel = atoi(optarg);
@@ -129,6 +129,9 @@ int main(int argc, char* argv[]) {
             break;
         case 'i':
             direct = false;
+            break;
+        case 'u':
+            uniform = true;
             break;
         default:
             usage();

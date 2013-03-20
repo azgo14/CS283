@@ -95,6 +95,10 @@ void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, 
             
             std::pair<Object*, vec3> i_result = calculateIntersection(eye, ray_direction);
             //std::cout << "Intersection: " << i_result.second.x << " " << i_result.second.y << " " << i_result.second.z << std::endl;
+            if (i_result.first == NULL) {
+                std::cout << "No objects intersected" << std::endl;
+                continue;
+            }
             Object* i_obj = i_result.first;
             glm::vec3 intersection = i_result.second;
             if (i_obj != NULL) {
@@ -128,15 +132,22 @@ glm::vec3 Pathtrace::calculateRay(const vec3& eye, const vec3& center, const vec
     return glm::normalize(a*u + b*v - w);
 }
 
-glm::vec4 phongIllumination(const vec3& normal, const vec3& direction, const vec3& halfAngle,
-                            const vec4& lightcolor, float distance, const vec4& obj_diffuse,
-                            const vec4& obj_specular, GLfloat obj_shininess) {
+namespace {
+float inv_pi = 1 / M_PI;
+glm::vec4 phongDiffuse(const vec3& normal, const vec3& direction, const vec4& color,
+                       const vec4& obj_diffuse) {
     float nDotL = glm::dot(normal, direction);
     if (nDotL < 0) {
         nDotL = 0;
     }
     vec4 diffuseTerm = glm::vec4(obj_diffuse.x * nDotL, obj_diffuse.y * nDotL,
                                  obj_diffuse.z * nDotL, obj_diffuse.w * nDotL);
+    
+    return color * inv_pi * diffuseTerm ;
+
+}
+glm::vec4 phongSpecular(const vec3& normal, const vec3& direction, const vec3& halfAngle,
+                       const vec4& color, const vec4& obj_specular, GLfloat obj_shininess) {
     float nDotH = glm::dot(normal, halfAngle);
     if (nDotH < 0) {
         nDotH = 0;
@@ -145,26 +156,13 @@ glm::vec4 phongIllumination(const vec3& normal, const vec3& direction, const vec
     vec4 specularTerm = glm::vec4(obj_specular.x * shine, obj_specular.y * shine,
                                   obj_specular.z * shine, obj_specular.w * shine);
     
-    return (lightcolor / (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance)) * (diffuseTerm + specularTerm);
+    return color * specularTerm;
 
-}
-
-namespace {
-vec3 sampleFromHemiSphereUniform(vec3 hemisphere_normal) {
-    float theta, azm;
-    vec3 point;
-    do {
-        theta = (rand() / static_cast<float>(RAND_MAX)) * M_PI;
-        azm = (rand() / static_cast<float>(RAND_MAX)) * 2 * M_PI;
-        point = vec3(sin(theta)*cos(azm), sin(theta)*sin(azm), cos(theta));
-    } while (glm::dot(point, hemisphere_normal) <= 0);
-    return point;
 }
 } // namespace
-
-glm::vec4 Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
-                                    const vec3& eye, const vec3 eyedir,
-                                    const vec3& normal, vec4 * finalcolor) {
+void Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
+                               const vec3& eye, const vec3& eyedir,
+                               const vec3& normal, float reflect_weight, vec4 * finalcolor) {
     vec3 shadow_direction, halfAngle;
     float distance;
     //std::cout<<"Num of Lights: " << lights.size()<<std::endl;
@@ -188,45 +186,105 @@ glm::vec4 Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
         halfAngle = glm::normalize(shadow_direction + eyedir);
         distance = sqrt(dist_to_light);
         
-        vec4 color = lights[i]->_emission;
+        vec4 color = lights[i]->_emission / (attenuation.x + attenuation.y * distance ); // attenuation for area lights (TODO: look up if this is right)
         
-        (*finalcolor) += .5 * phongIllumination(normal, shadow_direction,
-                                             halfAngle, color, distance,
-                                             obj->_diffuse, obj->_specular,
-                                             obj->_shininess); // half the contribution of each part of the area light (since it's just one light in the end)
+        (*finalcolor) += .5 * reflect_weight * phongDiffuse(normal, shadow_direction,
+                                                            color, obj->_diffuse);
+        (*finalcolor) += .5 * reflect_weight * phongSpecular(normal, shadow_direction, halfAngle,
+                                                             color, obj->_specular,
+                                                             obj->_shininess);
+        // ^ half the contribution of each part of the area light (since it's just one light in the end)
 
         //std::cout<< finalcolor.x << " " << finalcolor.y << " " <<finalcolor.z << std::endl;
         
     }
-    
-    (*finalcolor) += obj->_emission;
+}
+namespace {
+float getRandomProb() {
+    return rand() / static_cast<float>(RAND_MAX);
 }
 
-//glm::vec4 Pathtrace::getIndirectLight() {
-    
+vec3 sampleFromHemiSphereUniform(vec3 hemisphere_normal) {
+    float theta, azm;
+    vec3 point;
+    do {
+        theta = (rand() / static_cast<float>(RAND_MAX)) * M_PI;
+        azm = (rand() / static_cast<float>(RAND_MAX)) * 2 * M_PI;
+        point = vec3(sin(theta)*cos(azm), sin(theta)*sin(azm), cos(theta));
+    } while (glm::dot(point, hemisphere_normal) <= 0);
+    return glm::normalize(point);
+}
+} // namespace
+
+// glm::vec4 Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection,
+//                                              const vec3& eye, const vec3 eyedir,
+//                                              const vec3& normal, vec4 * finalcolor) {
+//     vec3 new_dir = sampleFromHemiSphereUniform(normal);
+//     float diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) / 
+//         obj->_diffuse.x + obj->_diffuse.x + obj->_diffuse.x + obj->_specular.x + obj->_specular.y + obj->_specular.z);
+//     float diffuse_weight = 1 / diffuse_prob;
+//     float spec_weight = 1/ (1 - )
+//     if (getRandomProb() < diffuse_prob) {
+//     //diffuse
+//     } else {
+//     //specular
+//     }
+// }
+
+void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
+                                        float reflect_weight, int recurse, vec4 * finalcolor) {
+    float diffuse_prob = .5;
+    float diffuse_weight = 1 / diffuse_prob;
+    float specular_weight = 1/ (1 - diffuse_weight);
+    vec3 new_dir; // TODO: check if always normalized
+    vec3 temp_start;
+    std::pair<Object*, vec3> i_result;
+    do {
+        new_dir = sampleFromHemiSphereUniform(normal);
+        temp_start = intersection + INCREMENT * new_dir;
+        i_result = calculateIntersection(temp_start, new_dir);
+        if (i_result.first == NULL) {
+            //std::cout << "No objects intersected" << std::endl;
+            return;
+        }
+    } while (i_result.first->isLight); // indirect so don't want direct light
+    vec4 color = calculateColor(i_result.first, i_result.second, temp_start, recurse - 1);
+    if (getRandomProb() < diffuse_prob) {
+        //diffuse
+        (*finalcolor) += reflect_weight * diffuse_weight * phongDiffuse(normal, new_dir,
+                                                                        color, obj->_diffuse);
+    } else {
+        //specular
+        vec3 halfAngle = glm::normalize(new_dir + eyedir);
+        (*finalcolor) += reflect_weight * specular_weight * phongSpecular(normal, new_dir, halfAngle,
+                                                                          color, obj->_specular,
+                                                                          obj->_shininess);
+    }
+}
 
 glm::vec4 Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec3& eye, int recurse) {
-    if (obj->isLight) {
-        return obj->_emission;
-    }
-    vec4 finalcolor = vec4(0, 0, 0, 0);
-    vec3 eyedir = glm::normalize(eye-intersection);
-    vec3 normal = obj->getNormal(intersection);
-
-    getDirectLight(obj, intersection, eye, eyedir, normal, &finalcolor);
-
-    if (recurse > 0) {  // This is for reflection
-        float times = 2 * glm::dot(eyedir, normal);
-        vec3 reflection_direction = glm::normalize(-eyedir+(times * normal));
-        vec3 temp_start = intersection + INCREMENT * reflection_direction;
-        std::pair<Object*, vec3> i_result = calculateIntersection(temp_start, reflection_direction);
-        Object* i_obj = i_result.first;
-        glm::vec3 intersec = i_result.second;
-        if (i_obj != NULL) {
-            finalcolor += obj->_specular * calculateColor(i_obj, intersec, intersection, recurse - 1);
+    float emission_prob = .5;
+    float emission_weight = 1 / emission_prob;
+    float reflect_weight = 1 / (1 - emission_prob);
+    if (obj->isLight || getRandomProb() < emission_prob || recurse <= 0) {
+        return emission_weight * obj->_emission;
+    } else {
+        vec4 finalcolor = vec4(0, 0, 0, 0);
+        vec3 eyedir = glm::normalize(eye-intersection);
+        vec3 normal = obj->getNormal(intersection);
+        if (direct) {
+            getDirectLight(obj, intersection, eye, eyedir, normal, reflect_weight, &finalcolor);
+        } 
+        if (indirect) {
+            if (uniform) {
+                getUniformIndirectLight(obj, intersection, eyedir, normal, reflect_weight, recurse, &finalcolor);
+            } else {
+                //getImportanceIndirectLight
+            }
         }
+        
+        return glm::vec4(std::min(finalcolor[0],static_cast<float>(1)), std::min(finalcolor[1],static_cast<float>(1)),
+                         std::min(finalcolor[2],static_cast<float>(1)), std::min(finalcolor[3],static_cast<float>(1)));
     }
-    return glm::vec4(std::min(finalcolor[0],static_cast<float>(1)), std::min(finalcolor[1],static_cast<float>(1)),
-                     std::min(finalcolor[2],static_cast<float>(1)), std::min(finalcolor[3],static_cast<float>(1)));
 }
 

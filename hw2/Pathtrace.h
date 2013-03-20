@@ -20,10 +20,14 @@ public:
     glm::vec4 calculateColor(Object * obj, const vec3& intersect,
                              const vec3& eye, int recurse);
 private:
-    glm::vec4 getDirectLight(Object * obj, const vec3& intersection,
-                             const vec3& eye, const vec3 eyedir,
-                             const vec3& normal, vec4 * finalcolor);
+    void getDirectLight(Object * obj, const vec3& intersection,
+                        const vec3& eye, const vec3& eyedir,
+                        const vec3& normal, float reflect_weight, 
+                        vec4 * finalcolor);
     
+    void getUniformIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir,
+                                 const vec3& normal, float reflect_weight, int recurse,
+                                 vec4 * finalcolor);
     const static float INCREMENT;
 };
 

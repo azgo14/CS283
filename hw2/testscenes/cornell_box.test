@@ -1,9 +1,9 @@
 #Cornell Box
-size 480 480
+size 48 48
 camera 0 0 3 0 0 0 0 1 0 45
 output cornell.png
 
-maxdepth 5
+maxdepth 100
 
 
 
