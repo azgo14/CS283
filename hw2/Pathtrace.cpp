@@ -243,7 +243,7 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
                                         float reflect_weight, int recurse, vec4 * finalcolor) {
     float diffuse_prob = .5;
     float diffuse_weight = 1 / diffuse_prob;
-    float specular_weight = 1/ (1 - diffuse_weight);
+    float specular_weight = 1/ (1 - diffuse_prob);
     vec3 new_dir; // TODO: check if always normalized
     vec3 temp_start;
     std::pair<Object*, vec3> i_result;
@@ -265,9 +265,14 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
     } else {
         //specular        
         vec3 halfAngle = glm::normalize(new_dir + eyedir);
+        //std::cout << "Half Angle " << halfAngle.x << " " << halfAngle.y << " " << halfAngle.z << std::endl;
         (*finalcolor) += reflect_weight * specular_weight * phongSpecular(normal, new_dir, halfAngle,
                                                                           color, obj->_specular,
                                                                           obj->_shininess);
+        
+        //std::cout << "Indirect Reflect Weight: " << reflect_weight << std::endl;
+        //std::cout << "Indirect Specular Weight: " << specular_weight << std::endl;                                                              
+        //std::cout << "Indirect Specular Color: " << finalcolor->x << " " << finalcolor->y << " " << finalcolor->z << std::endl;
     }
 }
 
@@ -286,7 +291,6 @@ void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec
     
     if (obj->isLight) {
         (*finalcolor) += obj->_emission;
-        std::cout << finalcolor->x << std::endl;
     } else if (getRandomProb() < emission_prob || recurse <= 0) {
         if (recurse <= 0) {
             emission_weight = 1;
