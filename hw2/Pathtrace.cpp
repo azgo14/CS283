@@ -420,7 +420,9 @@ void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec
         (*finalcolor) += alive_weight * static_cast<Light*>(obj)->getIntensity(intersection, attenuation);
         return;
     } else if (obj->_reflectance.x != 0 || obj->_reflectance.y != 0 || obj->_reflectance.z != 0 ) {
+        //std::cout << obj->_reflectance.x << " " << obj->_reflectance.y << " " << obj->_reflectance.z << std::endl;
         getReflectedLight(obj, intersection, eyedir, normal, alive_weight, weight, recurse, finalcolor); // does recursive call
+        return;
     }
     
     if (recurse != depth || direct) {
