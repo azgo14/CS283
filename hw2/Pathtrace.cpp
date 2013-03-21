@@ -216,29 +216,111 @@ vec3 sampleFromHemiSphereUniform(vec3 hemisphere_normal) {
     float theta, azm;
     vec3 point;
     do {
-        theta = (rand() / static_cast<float>(RAND_MAX)) * M_PI;
-        azm = (rand() / static_cast<float>(RAND_MAX)) * 2 * M_PI;
+        theta = getRandomProb() * M_PI;
+        azm = getRandomProb() * 2 * M_PI;
         point = vec3(sin(theta)*cos(azm), sin(theta)*sin(azm), cos(theta));
     } while (glm::dot(point, hemisphere_normal) <= 0);
     return glm::normalize(point);
 }
+
+vec3 sampleFromHemiSphereCosLambertianBRDF(vec3 hemisphere_normal) {
+    float theta, azm, z;
+    vec3 point;
+    azm = getRandomProb() * 2 * M_PI;
+    z = getRandomProb();
+    theta = acos(sqrt(z));
+    point = glm::normalize(vec3(sin(theta)*cos(azm), sin(theta)*sin(azm), z));
+    
+    vec3 w = hemisphere_normal;
+    vec3 u = glm::normalize(glm::cross(point, w));
+    vec3 v = glm::normalize(glm::cross(w, u));
+    glm::mat3 rot = glm::mat3(u[0], u[1], u[2],
+                              v[0], v[1], v[2],
+                              w[0], w[1], w[2]);
+    return glm::normalize(rot * point);
+}
+
+vec3 sampleFromHemiSpherePhongBRDF(vec3 reflect_dir, int shininess) {
+    float theta, azm, z;
+    vec3 point;
+    z = getRandomProb();
+    theta = acos(pow(z, 1.0 / (shininess + 1)));
+    azm = getRandomProb() * 2 * M_PI;
+
+    point = glm::normalize(vec3(sin(theta)*cos(azm), sin(theta)*sin(azm), z));
+    
+    vec3 w = reflect_dir;
+    vec3 u = glm::normalize(glm::cross(point, w));
+    vec3 v = glm::normalize(glm::cross(w, u));
+    glm::mat3 rot = glm::mat3(u[0], u[1], u[2],
+                              v[0], v[1], v[2],
+                              w[0], w[1], w[2]);
+    return glm::normalize(rot * point);
+}
 } // namespace
-/*
-glm::vec4 Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection,
-                                             const vec3& eye, const vec3 eyedir,
-                                             const vec3& normal, vec4 * finalcolor) {
-    vec3 new_dir = sampleFromHemiSphereUniform(normal);
-    float diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) / 
-        obj->_diffuse.x + obj->_diffuse.x + obj->_diffuse.x + obj->_specular.x + obj->_specular.y + obj->_specular.z);
+
+void Pathtrace::getImportanceIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
+                                           float alive_weight, float weight, int recurse, vec4 * finalcolor) {
+    float diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) /
+        (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z + obj->_specular.x + obj->_specular.y + obj->_specular.z); 
+        
     float diffuse_weight = 1 / diffuse_prob;
-    float spec_weight = 1/ (1 - )
-    if (getRandomProb() < diffuse_prob) {
-    //diffuse
+    float specular_weight = 1/ (1 - diffuse_prob);
+    
+    bool chooseDiffuse = getRandomProb() < diffuse_prob;
+    vec3 new_dir; // TODO: check if always normalized
+    vec3 temp_start;
+    std::pair<Object*, vec3> i_result;
+    do {
+        if (chooseDiffuse) {
+            new_dir = sampleFromHemiSphereCosLambertianBRDF(normal);
+        } else {
+            float times = 2 * glm::dot(eyedir, normal);
+            vec3 reflection_direction = glm::normalize(-eyedir+(times * normal));
+            new_dir = sampleFromHemiSpherePhongBRDF(reflection_direction, obj->_shininess);
+        }
+        temp_start = intersection + INCREMENT * new_dir;
+        i_result = calculateIntersection(temp_start, new_dir);
+        if (i_result.first == NULL) {
+            //std::cout << "No objects intersected" << std::endl;
+            return;
+        }
+    } while (i_result.first->isLight);
+
+    weight = weight * std::max(glm::dot(normal, new_dir), static_cast<float>(0));  // this applies for both specular and diffuse    
+    if (chooseDiffuse) {
+        //diffuse
+        weight = inv_pi * weight;
+        vec4 color = vec4(0,0,0,0);
+        calculateColor(i_result.first, i_result.second, temp_start, recurse - 1, weight, &color);
+        (*finalcolor) += alive_weight * diffuse_weight * phongDiffuse(color, obj->_diffuse);                                                                        
+ 
     } else {
-    //specular
+        //specular
+        vec3 halfAngle = glm::normalize(new_dir + eyedir);
+        //std::cout << "Half Angle " << halfAngle.x << " " << halfAngle.y << " " << halfAngle.z << std::endl;
+
+
+        float nDotH = glm::dot(normal, halfAngle);
+        if (nDotH < 0) {
+            nDotH = 0;
+        }
+        float shine = glm::pow(nDotH, obj->_shininess);
+        weight = shine * weight;
+        //std::cout << weight << std::endl;
+        vec4 color = vec4(0,0,0,0);
+        calculateColor(i_result.first, i_result.second, temp_start, recurse - 1, weight, &color);
+
+        (*finalcolor) += alive_weight * specular_weight * phongSpecular(normal, halfAngle, color,
+                                                                        obj->_specular, obj->_shininess);
+        
+        //std::cout << "Indirect Reflect Weight: " << reflect_weight << std::endl;
+        //std::cout << "Indirect Specular Weight: " << specular_weight << std::endl;                                                              
+        //std::cout << "Indirect Specular Color: " << finalcolor->x << " " << finalcolor->y << " " << finalcolor->z << std::endl;
     }
 }
-*/
+
+
 void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
                                         float alive_weight, float weight, int recurse, vec4 * finalcolor) {
     float diffuse_prob = .5;
@@ -324,7 +406,7 @@ void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec
         if (uniform) {                
             getUniformIndirectLight(obj, intersection, eyedir, normal, alive_weight, weight, recurse, finalcolor); // does recursive call
         } else {
-            //getImportanceIndirectLight
+            getImportanceIndirectLight(obj, intersection, eyedir, normal, alive_weight, weight, recurse, finalcolor); // does recursive call
         }
     }
     //std::cout<< finalcolor->x << " " << finalcolor->y << " " <<finalcolor->z << std::endl;
