@@ -116,8 +116,11 @@ int main(int argc, char* argv[]) {
     //tests();
     int option;
     char * filename = NULL;
-    while ((option = getopt(argc, argv, "dir:s:ux:y:")) != -1) {
+    while ((option = getopt(argc, argv, "dir:s:ux:y:a")) != -1) {
         switch (option) {
+        case 'a':
+            antilasing = true;
+            break;
         case 'r':
             ray_per_pixel = atoi(optarg);
             break;

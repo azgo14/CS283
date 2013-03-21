@@ -85,11 +85,16 @@ bool checkInShadow(vec3 shadow_origin, vec3 shadow_direction, float dist_to_ligh
     return false;
 }
 
+float getRandomProb() {
+    return rand() / static_cast<float>(RAND_MAX);
+}
+
 void output_info() {
     std::cout << "Starting Pathtracing" << std::endl
               << "Direct Lighting: " << ((direct) ? "true" : "false") << std::endl
               << "Indirect Lighting: " << ((indirect) ? "true" : "false") << std::endl
-              << "Uniform: " << ((uniform) ? "true" : "false") << std::endl;
+              << "Uniform: " << ((uniform) ? "true" : "false") << std::endl
+              << "Antilasing: " << ((antilasing) ? "true" : "false") << std::endl;
 }
 } // namespace
 
@@ -99,8 +104,14 @@ void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, 
     #pragma omp parallel for
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            glm::vec3 ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
-            
+            float i_offset = getRandomProb();
+            float j_offset = getRandomProb();
+            glm::vec3 ray_direction;
+            if (antilasing) {
+                ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+i_offset, static_cast<float>(j)+j_offset);
+            } else {
+                ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
+            }
             std::pair<Object*, vec3> i_result = calculateIntersection(eye, ray_direction);
             //std::cout << "Intersection: " << i_result.second.x << " " << i_result.second.y << " " << i_result.second.z << std::endl;
             if (i_result.first == NULL) {
@@ -208,10 +219,6 @@ void Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
     }
 }
 namespace {
-float getRandomProb() {
-    return rand() / static_cast<float>(RAND_MAX);
-}
-
 vec3 sampleFromHemiSphereUniform(vec3 hemisphere_normal) {
     float theta, azm;
     vec3 point;

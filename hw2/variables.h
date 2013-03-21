@@ -36,6 +36,7 @@ int ray_per_pixel = 5;
 bool direct = true;
 bool indirect = true;
 bool uniform = false;
+bool antilasing = false;
 #else
 EXTERN vec3 eyeinit ;
 EXTERN vec3 upinit ;
@@ -47,6 +48,7 @@ EXTERN int ray_per_pixel;
 EXTERN bool indirect;
 EXTERN bool direct;
 EXTERN bool uniform;
+EXTERN bool antilasing;
 #endif
 
 EXTERN std::string output;
