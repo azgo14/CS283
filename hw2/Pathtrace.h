@@ -32,6 +32,8 @@ private:
     void getImportanceIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir,
                                     const vec3& normal, float alive_weight, float weight,
                                     int recurse, vec4 * finalcolor);
+    void getReflectedLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
+                           float alive_weight, float weight, int recurse, vec4 * finalcolor);
                                     
     const static float INCREMENT;
 };

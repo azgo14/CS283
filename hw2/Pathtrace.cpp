@@ -94,7 +94,7 @@ void output_info() {
               << "Direct Lighting: " << ((direct) ? "true" : "false") << std::endl
               << "Indirect Lighting: " << ((indirect) ? "true" : "false") << std::endl
               << "Uniform: " << ((uniform) ? "true" : "false") << std::endl
-              << "Antilasing: " << ((antilasing) ? "true" : "false") << std::endl;
+              << "Antialiasing: " << ((antialiasing) ? "true" : "false") << std::endl;
 }
 } // namespace
 
@@ -106,10 +106,10 @@ void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, 
         for (int j = 0; j < width; j++) {
             vec4 phongColor = vec4(0,0,0,0);
             for (int ray_i = 0; ray_i < ray_per_pixel; ++ray_i) {
-                float i_offset = getRandomProb() - .5;
+                float i_offset = getRandomProb() - .5; // for antialiasing
                 float j_offset = getRandomProb() - .5;
                 glm::vec3 ray_direction;
-                if (antilasing) {
+                if (antialiasing) {
                     ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+i_offset, static_cast<float>(j)+j_offset);
                 } else {
                     ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
@@ -331,6 +331,19 @@ void Pathtrace::getImportanceIndirectLight(Object * obj, const vec3& intersectio
     }
 }
 
+void Pathtrace::getReflectedLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
+                                  float alive_weight, float weight, int recurse, vec4 * finalcolor) {
+    float times = 2 * glm::dot(eyedir, normal);
+    vec3 reflection_direction = glm::normalize(-eyedir+(times * normal));
+    vec3 temp_start = intersection + INCREMENT * reflection_direction;
+    std::pair<Object*, vec3> i_result = calculateIntersection(temp_start, reflection_direction);
+    if (i_result.first == NULL) {
+        return;
+    }
+    vec4 color = vec4(0,0,0,0);
+    calculateColor(i_result.first, i_result.second, temp_start, recurse - 1, weight, &color);
+    (*finalcolor) += alive_weight * obj->_reflectance * color;
+}
 
 void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
                                         float alive_weight, float weight, int recurse, vec4 * finalcolor) {
@@ -406,8 +419,10 @@ void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec
         //std::cout << "here"<<std::endl;
         (*finalcolor) += alive_weight * static_cast<Light*>(obj)->getIntensity(intersection, attenuation);
         return;
+    } else if (obj->_reflectance.x != 0 || obj->_reflectance.y != 0 || obj->_reflectance.z != 0 ) {
+        getReflectedLight(obj, intersection, eyedir, normal, alive_weight, weight, recurse, finalcolor); // does recursive call
     }
-
+    
     if (recurse != depth || direct) {
         getDirectLight(obj, intersection, eye, eyedir, normal, alive_weight, finalcolor);
         (*finalcolor) += alive_weight * obj->_emission;

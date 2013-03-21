@@ -22,6 +22,7 @@ public:
     vec4 _diffuse ;
     vec4 _specular ;
     vec4 _emission ;
+    vec4 _reflectance ;
     GLfloat _shininess ;
     glm::mat4 transform ;
     bool isLight;

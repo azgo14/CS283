@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     while ((option = getopt(argc, argv, "dir:s:ux:y:a")) != -1) {
         switch (option) {
         case 'a':
-            antilasing = true;
+            antialiasing = true;
             break;
         case 'r':
             ray_per_pixel = atoi(optarg);

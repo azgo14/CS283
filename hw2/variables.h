@@ -36,7 +36,7 @@ int ray_per_pixel = 5;
 bool direct = true;
 bool indirect = true;
 bool uniform = false;
-bool antilasing = false;
+bool antialiasing = false;
 #else
 EXTERN vec3 eyeinit ;
 EXTERN vec3 upinit ;
@@ -48,7 +48,7 @@ EXTERN int ray_per_pixel;
 EXTERN bool indirect;
 EXTERN bool direct;
 EXTERN bool uniform;
-EXTERN bool antilasing;
+EXTERN bool antialiasing;
 #endif
 
 EXTERN std::string output;
@@ -73,6 +73,7 @@ EXTERN GLfloat shininess ;
 EXTERN glm::vec4 diffuse ;
 EXTERN glm::vec4 specular ;
 EXTERN glm::vec4 emission ;
+EXTERN glm::vec4 reflectance;
 EXTERN GLfloat shininess ;
 
 // For multiple objects, read from a file.

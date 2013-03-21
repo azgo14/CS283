@@ -23,7 +23,7 @@ specular 0 0 0
 shininess 1
 emission 0 0 0
 diffuse 0 0 0
-
+reflectance 0 0 0
 attenuation 1 0.1 0.05
 
 #area light

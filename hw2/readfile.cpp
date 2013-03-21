@@ -85,6 +85,7 @@ void readfile(const char * filename) {
                         obj->_specular = specular;
                         obj->_emission = emission;
                         obj->_shininess = shininess ;
+                        obj->_reflectance = reflectance ;
                         obj->transform = transfstack.top() ;
                         boxes.push_back(new BoundingBox(obj));
                         lights.push_back(obj);
@@ -106,6 +107,12 @@ void readfile(const char * filename) {
                     validinput = readvals(s, 3, values) ;
                     if (validinput) {
                         specular = glm::vec4(values[0], values[1], values[2], 1);
+                    }
+                } 
+                else if (cmd == "reflectance") {
+                    validinput = readvals(s, 3, values) ;
+                    if (validinput) {
+                        reflectance = glm::vec4(values[0], values[1], values[2], 1);
                     }
                 }
                 else if (cmd == "emission") {
@@ -183,6 +190,7 @@ void readfile(const char * filename) {
                             obj->_specular = specular ;
                             obj->_emission = emission ;
                             obj->_shininess = shininess ;
+                            obj->_reflectance = reflectance ;
                             obj->transform = transfstack.top() ;
                             boxes.push_back(new BoundingBox(obj));
                         }
@@ -194,6 +202,7 @@ void readfile(const char * filename) {
                             obj->_specular = specular;
                             obj->_emission = emission;
                             obj->_shininess = shininess ;
+                            obj->_reflectance = reflectance ;
                             obj->transform = transfstack.top() ;
                             boxes.push_back(new BoundingBox(obj));
                         }
@@ -206,6 +215,7 @@ void readfile(const char * filename) {
                             obj->_specular = specular;
                             obj->_emission = emission;
                             obj->_shininess = shininess ;
+                            obj->_reflectance = reflectance ;
                             obj->transform = transfstack.top() ;
                             boxes.push_back(new BoundingBox(obj));
                         }
