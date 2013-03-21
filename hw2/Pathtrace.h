@@ -18,15 +18,15 @@ public:
                            const vec3& up, float fovx, float fovy,
                            int width, int height, float i, float j);
     void calculateColor(Object * obj, const vec3& intersect,
-                             const vec3& eye, int recurse, vec4 *finalcolor);
+                             const vec3& eye, int recurse, float alive_weight, vec4 *finalcolor);
 private:
     void getDirectLight(Object * obj, const vec3& intersection,
                         const vec3& eye, const vec3& eyedir,
-                        const vec3& normal, float reflect_weight, 
+                        const vec3& normal, float alive_weight, 
                         vec4 * finalcolor);
     
     void getUniformIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir,
-                                 const vec3& normal, float reflect_weight, int recurse,
+                                 const vec3& normal, float alive_weight, float weight, int recurse,
                                  vec4 * finalcolor);
     const static float INCREMENT;
 };
