@@ -104,8 +104,8 @@ void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, 
     #pragma omp parallel for
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            float i_offset = getRandomProb();
-            float j_offset = getRandomProb();
+            float i_offset = getRandomProb() - .5;
+            float j_offset = getRandomProb() - .5;
             glm::vec3 ray_direction;
             if (antilasing) {
                 ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+i_offset, static_cast<float>(j)+j_offset);
