@@ -261,12 +261,17 @@ vec3 sampleFromHemiSpherePhongBRDF(vec3 reflect_dir, int shininess) {
 
 void Pathtrace::getImportanceIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
                                            float alive_weight, float weight, int recurse, vec4 * finalcolor) {
-    float diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) /
-        (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z + obj->_specular.x + obj->_specular.y + obj->_specular.z); 
-        
-    float diffuse_weight = 1 / diffuse_prob;
-    float specular_weight = 1/ (1 - diffuse_prob);
     
+    float diffuse_prob, diffuse_weight, specular_weight;
+    diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) /
+        (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z + obj->_specular.x + obj->_specular.y + obj->_specular.z); 
+    if (diffuse_prob == 0) {
+        diffuse_weight = 1;
+        specular_weight = 1;
+    } else {    
+        diffuse_weight = 1 / diffuse_prob;
+        specular_weight = 1/ (1 - diffuse_prob);
+    }
     bool chooseDiffuse = getRandomProb() < diffuse_prob;
     vec3 new_dir; // TODO: check if always normalized
     vec3 temp_start;

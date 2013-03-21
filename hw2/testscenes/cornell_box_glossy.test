@@ -88,16 +88,20 @@ tri 6 2 3
 popTransform
 
 #sphere1
-diffuse 1 1 1 
 pushTransform
+diffuse 0 0 0 
+specular 1 1 1 
+shininess 10
 translate -.45 -.6 .2
 scale 0.3 0.3 0.3
 sphere 0 0 0 1 
 popTransform
 
 #sphere2
-diffuse 1 1 1
 pushTransform
+diffuse 0 0 0
+specular 1 1 1
+shininess 100
 translate 0.45 -0.6 -.2
 scale 0.3 0.3 0.3
 sphere 0 0 0 1
