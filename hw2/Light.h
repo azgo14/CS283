@@ -14,6 +14,7 @@ public:
     virtual ~Light() {};
     virtual vec4 getLightPosn() = 0;
     virtual vec4 getColor(const vec3& normal, const vec3& dir_to_light, float distance) = 0;
+    virtual vec4 getIntensity(const vec3& intersection, const vec3& attenuation) = 0;
 };
 
 //can only be rectangular areas
@@ -23,6 +24,7 @@ public:
     virtual ~AreaLight() {};
     vec4 getLightPosn();
     vec4 getColor(const vec3& normal, const vec3& dir_to_light, float distance);
+    vec4 getIntensity(const vec3& intersection, const vec3& attenuation);
 private:
     float _area;
 };

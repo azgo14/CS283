@@ -194,8 +194,7 @@ void Pathtrace::getDirectLight(Object * obj, const vec3& intersection,
         halfAngle = glm::normalize(shadow_direction + eyedir);
         distance = sqrt(dist_to_light);
         
-        vec4 color = lights[i]->getColor(normal, shadow_direction, distance) / 
-            (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance ); // attenuation for area lights (TODO: look up if this is right)
+        vec4 color = lights[i]->getColor(normal, shadow_direction, distance); 
         
         (*finalcolor) += .5 * reflect_weight * phongDiffuse(color, obj->_diffuse);
         (*finalcolor) += .5 * reflect_weight * phongSpecular(normal, shadow_direction, halfAngle,
@@ -223,22 +222,22 @@ vec3 sampleFromHemiSphereUniform(vec3 hemisphere_normal) {
     return glm::normalize(point);
 }
 } // namespace
-
-// glm::vec4 Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection,
-//                                              const vec3& eye, const vec3 eyedir,
-//                                              const vec3& normal, vec4 * finalcolor) {
-//     vec3 new_dir = sampleFromHemiSphereUniform(normal);
-//     float diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) / 
-//         obj->_diffuse.x + obj->_diffuse.x + obj->_diffuse.x + obj->_specular.x + obj->_specular.y + obj->_specular.z);
-//     float diffuse_weight = 1 / diffuse_prob;
-//     float spec_weight = 1/ (1 - )
-//     if (getRandomProb() < diffuse_prob) {
-//     //diffuse
-//     } else {
-//     //specular
-//     }
-// }
-
+/*
+glm::vec4 Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection,
+                                             const vec3& eye, const vec3 eyedir,
+                                             const vec3& normal, vec4 * finalcolor) {
+    vec3 new_dir = sampleFromHemiSphereUniform(normal);
+    float diffuse_prob = (obj->_diffuse.x + obj->_diffuse.y + obj->_diffuse.z) / 
+        obj->_diffuse.x + obj->_diffuse.x + obj->_diffuse.x + obj->_specular.x + obj->_specular.y + obj->_specular.z);
+    float diffuse_weight = 1 / diffuse_prob;
+    float spec_weight = 1/ (1 - )
+    if (getRandomProb() < diffuse_prob) {
+    //diffuse
+    } else {
+    //specular
+    }
+}
+*/
 void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, const vec3& eyedir, const vec3& normal,
                                         float reflect_weight, int recurse, vec4 * finalcolor) {
     float diffuse_prob = .5;
@@ -247,13 +246,15 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
     vec3 new_dir; // TODO: check if always normalized
     vec3 temp_start;
     std::pair<Object*, vec3> i_result;
-    new_dir = sampleFromHemiSphereUniform(normal);
-    temp_start = intersection + INCREMENT * new_dir;
-    i_result = calculateIntersection(temp_start, new_dir);
-    if (i_result.first == NULL) {
-        //std::cout << "No objects intersected" << std::endl;
-        return;
-    }
+    do {
+        new_dir = sampleFromHemiSphereUniform(normal);
+        temp_start = intersection + INCREMENT * new_dir;
+        i_result = calculateIntersection(temp_start, new_dir);
+        if (i_result.first == NULL) {
+            //std::cout << "No objects intersected" << std::endl;
+            return;
+        }
+    } while (i_result.first->isLight);
     vec4 color = vec4(0,0,0,0);
     calculateColor(i_result.first, i_result.second, temp_start, recurse - 1, &color);
     
@@ -275,36 +276,31 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
 }
 
 void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec3& eye, int recurse, vec4 *finalcolor) {
+    if (recurse < 90) {
+        return;
+    }
+
     vec3 eyedir = glm::normalize(eye-intersection);
     vec3 normal = obj->getNormal(intersection);
 
-    float emission_prob = .5;
-    float emission_weight = 1 / emission_prob;
-    float reflect_weight = 1 / (1 - emission_prob);
-    
-    if (recurse == depth && !direct) {
-        emission_prob = 0;
-        emission_weight = 1;
-    }
-    
     if (obj->isLight) {
         //std::cout << "here"<<std::endl;
-        (*finalcolor) += obj->_emission;
-    } else if (getRandomProb() < emission_prob || recurse <= 0) {
-        if (recurse <= 0) {
-            emission_weight = 1;
-        }
-        getDirectLight(obj, intersection, eye, eyedir, normal, emission_weight, finalcolor);
-        (*finalcolor) += emission_weight * (obj->_emission + *finalcolor);
-    } else {
-        if (indirect) {            
-            if (uniform) {                
-                getUniformIndirectLight(obj, intersection, eyedir, normal, reflect_weight, recurse, finalcolor);
-            } else {
-                //getImportanceIndirectLight
-            }
-        }
-        //std::cout<< finalcolor.x << " " << finalcolor.y << " " <<finalcolor.z << std::endl;
+        (*finalcolor) += static_cast<Light*>(obj)->getIntensity(intersection, attenuation);
+        return;
     }
+
+    if (recurse != depth || direct) {
+        getDirectLight(obj, intersection, eye, eyedir, normal, 1, finalcolor);
+        (*finalcolor) += obj->_emission;
+    }
+
+    if (indirect) {            
+        if (uniform) {                
+            getUniformIndirectLight(obj, intersection, eyedir, normal, 1, recurse, finalcolor);
+        } else {
+            //getImportanceIndirectLight
+        }
+    }
+    //std::cout<< finalcolor->x << " " << finalcolor->y << " " <<finalcolor->z << std::endl;
 }
 

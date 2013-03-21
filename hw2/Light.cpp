@@ -45,15 +45,21 @@ vec4 AreaLight::getLightPosn() {
     return vec4(point,1);
 }
 
+vec4 AreaLight::getIntensity(const vec3& intersection, const vec3& attenuation) {
+    vec4 temp = getLightPosn();
+    vec3 current = glm::vec3(temp.x, temp.y, temp.z);
+    float distance = sqrt(glm::dot(current - intersection, current - intersection));
+    return _emission * _area / (attenuation.x + attenuation.y * distance + attenuation.z * distance * distance); 
+}
 vec4 AreaLight::getColor(const vec3& normal, const vec3& dir_to_light, float distance) {
     if (!transformed) {
         calculateTransform();
     }
-    float area_n_dot_l = glm::dot(_t_normals[0], -dir_to_light);
+    float area_n_dot_l = glm::dot(_t_normals[0], -dir_to_light) / distance;
     if (area_n_dot_l < 0) {
         area_n_dot_l = 0;
     }
-    float n_dot_l = glm::dot(normal, dir_to_light);
+    float n_dot_l = glm::dot(normal, dir_to_light) / distance;
     if (n_dot_l < 0) {
         n_dot_l = 0;
     }
