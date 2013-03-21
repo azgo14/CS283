@@ -104,39 +104,38 @@ void Pathtrace::pathtrace (const vec3& eye, const vec3& center, const vec3& up, 
     #pragma omp parallel for
     for (int i = 0; i < height; i++) {
         for (int j = 0; j < width; j++) {
-            float i_offset = getRandomProb() - .5;
-            float j_offset = getRandomProb() - .5;
-            glm::vec3 ray_direction;
-            if (antilasing) {
-                ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+i_offset, static_cast<float>(j)+j_offset);
-            } else {
-                ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
-            }
-            std::pair<Object*, vec3> i_result = calculateIntersection(eye, ray_direction);
-            //std::cout << "Intersection: " << i_result.second.x << " " << i_result.second.y << " " << i_result.second.z << std::endl;
-            if (i_result.first == NULL) {
-                std::cout << "No objects intersected" << std::endl;
-                continue;
-            }
-            Object* i_obj = i_result.first;
-            glm::vec3 intersection = i_result.second;
-            if (i_obj != NULL) {
-                vec4 phongColor = vec4(0,0,0,0);
-                for (int ray_i = 0; ray_i < ray_per_pixel; ++ray_i) {
+            vec4 phongColor = vec4(0,0,0,0);
+            for (int ray_i = 0; ray_i < ray_per_pixel; ++ray_i) {
+                float i_offset = getRandomProb() - .5;
+                float j_offset = getRandomProb() - .5;
+                glm::vec3 ray_direction;
+                if (antilasing) {
+                    ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+i_offset, static_cast<float>(j)+j_offset);
+                } else {
+                    ray_direction = calculateRay(eye, center, up, fovx, fovy, width, height, static_cast<float>(i)+.5, static_cast<float>(j)+.5);
+                }
+                std::pair<Object*, vec3> i_result = calculateIntersection(eye, ray_direction);
+                //std::cout << "Intersection: " << i_result.second.x << " " << i_result.second.y << " " << i_result.second.z << std::endl;
+                if (i_result.first == NULL) {
+                    std::cout << "No objects intersected" << std::endl;
+                    continue;
+                }
+                Object* i_obj = i_result.first;
+                glm::vec3 intersection = i_result.second;
+                if (i_obj != NULL) {
                     vec4 tempColor = vec4(0,0,0,0);
                     calculateColor(i_obj, intersection, eye, recurse, 1, &tempColor);
                     tempColor = glm::vec4(std::min((tempColor)[0],static_cast<float>(1)), std::min((tempColor)[1],static_cast<float>(1)),
                                           std::min((tempColor)[2],static_cast<float>(1)), std::min((tempColor)[3],static_cast<float>(1)));
                     phongColor += (1 / static_cast<float>(ray_per_pixel)) * tempColor;
                 }
-                
-                RGBQUAD color;
-                color.rgbBlue = 255 * phongColor.x;
-                color.rgbGreen = 255 * phongColor.y;
-                color.rgbRed = 255 * phongColor.z;
-                //std::cout << "Color: " << 255 * phongColor.z << " " << 255 * phongColor.y << " " << 255 * phongColor.x << std::endl;
-                FreeImage_SetPixelColor(bitmap, j, height - i - 1, &color);
             }
+            RGBQUAD color;
+            color.rgbBlue = 255 * phongColor.x;
+            color.rgbGreen = 255 * phongColor.y;
+            color.rgbRed = 255 * phongColor.z;
+            //std::cout << "Color: " << 255 * phongColor.z << " " << 255 * phongColor.y << " " << 255 * phongColor.x << std::endl;
+            FreeImage_SetPixelColor(bitmap, j, height - i - 1, &color);
         }
         std::cout << ++count << " rows out of " << height << " rows calculated." << std::endl;
     }
