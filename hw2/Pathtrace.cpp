@@ -256,7 +256,8 @@ void Pathtrace::getUniformIndirectLight(Object * obj, const vec3& intersection, 
             return;
         }
     } while (i_result.first->isLight);
-    
+
+    weight = weight * std::max(glm::dot(normal, new_dir), static_cast<float>(0));  // this applies for both specular and diffuse    
     if (getRandomProb() < diffuse_prob) {
         //diffuse
         weight = inv_pi * weight;
@@ -296,8 +297,8 @@ bool winRussianRoulette(float weight) {
 } // namespace
 
 void Pathtrace::calculateColor(Object * obj, const vec3& intersection, const vec3& eye, int recurse, float weight, vec4 *finalcolor) {
-    //std::cout << weight << std::endl;
-    if (recurse < 0 || (weight < .1 && !winRussianRoulette(weight))) {
+    //std::cout << recurse << std::endl;
+    if (recurse < 0 || (weight < .05 && !winRussianRoulette(weight))) {
         return;
     }
     float alive_weight = 1;
