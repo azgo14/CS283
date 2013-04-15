@@ -254,6 +254,7 @@ void genShadowFrame(int frame_width, int frame_height) {
     if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT) {
         std::cerr << "GL_FRAME_BUFFER_COMPLETE_EXT failed" << std::endl;
     }
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     
 }
 
@@ -274,7 +275,7 @@ void init() {
 
     // Init shadow map shaders + variables
     s_vertexshader = initshaders(GL_VERTEX_SHADER, "shaders/shadow.vert.glsl");
-    s_fragshader = initshaders(GL_VERTEX_SHADER, "shaders/shadow.frag.glsl");
+    s_fragshader = initshaders(GL_FRAGMENT_SHADER, "shaders/shadow.frag.glsl");
     shadowprogram = initprogram(s_vertexshader, s_fragshader);
     depthmatrix = glGetUniformLocation(shadowprogram, "depthmatrix");
     shadowmap = glGetUniformLocation(shaderprogram, "shadowmap"); 

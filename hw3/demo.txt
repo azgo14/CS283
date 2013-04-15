@@ -27,7 +27,8 @@ translate 0 0 -0.2
   pushTransform
         translate 0 0 0.1 
         rotate 1 0 0 90 
-        teapot 0.15
+        scale .15 .15 .15
+        teapot 1
   popTransform
 
 # Floor (white but now with shading)
@@ -46,7 +47,8 @@ translate 0 0 -0.2
 # Sphere on top, Note hierarchical push/pop
         pushTransform 
             translate 0 0 0.6 
-            sphere 0.1
+            scale .1 .1 .1
+            sphere 1
         popTransform
         scale 0.2 0.2 .5
         translate 0 0 0.5
@@ -60,7 +62,8 @@ translate 0 0 -0.2
 # Sphere on top, Note hierarchical push/pop
         pushTransform 
             translate 0 0 0.6 
-            sphere 0.1
+            scale .1 .1 .1
+            sphere 1
         popTransform
        scale 0.2 0.2 .5
        translate 0 0 0.5
@@ -74,7 +77,8 @@ translate 0 0 -0.2
 # Sphere on top, Note hierarchical push/pop
         pushTransform 
             translate 0 0 0.6 
-            sphere 0.1
+            scale .1 .1 .1
+            sphere 1
         popTransform
         scale 0.2 0.2 .5
         translate 0 0 0.5
@@ -88,7 +92,8 @@ translate 0 0 -0.2
 # Sphere on top, Note hierarchical push/pop
         pushTransform 
             translate 0 0 0.6 
-            sphere 0.1
+            scale .1 .1 .1
+            sphere 1
         popTransform
         scale 0.2 0.2 .5
         translate 0 0 0.5
