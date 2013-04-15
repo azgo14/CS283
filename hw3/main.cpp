@@ -122,7 +122,8 @@ void keyboard(unsigned char key, int x, int y) {
                 break ;
         case 'r': // reset eye and up vectors, scale and translate. 
 		eye = eyeinit ; 
-		up = upinit ; 
+		up = upinit ;
+		center = centerinit ; 
                 sx = sy = 1.0 ; 
                 tx = ty = 0.0 ; 
                 for (int i = 0; i < numLights; ++i) {
@@ -233,20 +234,51 @@ void specialKey(int key, int x, int y) {
     glutPostRedisplay();
 }
 
+void genShadowFrame(int frame_width, int frame_height) {
+    // frame buffer
+    glGenFramebuffersEXT(1, &s_frame_id);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, s_frame_id);
+    
+    // texture
+    glGenTextures(1, &s_depth_texture_id);
+    glBindTexture(GL_TEXTURE_2D, s_depth_texture_id);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, frame_width, frame_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
+
+    glDrawBuffer(GL_NONE);
+    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, s_depth_texture_id, 0);
+    
+    if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT) {
+        std::cerr << "GL_FRAME_BUFFER_COMPLETE_EXT failed" << std::endl;
+    }
+    
+}
+
 void init() {
-      // Initialize shaders
-      vertexshader = initshaders(GL_VERTEX_SHADER, "shaders/light.vert.glsl") ;
-      fragmentshader = initshaders(GL_FRAGMENT_SHADER, "shaders/light.frag.glsl") ;
-      shaderprogram = initprogram(vertexshader, fragmentshader) ; 
-      enablelighting = glGetUniformLocation(shaderprogram,"enablelighting") ;
-      lightpos = glGetUniformLocation(shaderprogram,"lightposn") ;       
-      lightcol = glGetUniformLocation(shaderprogram,"lightcolor") ;       
-      numusedcol = glGetUniformLocation(shaderprogram,"numused") ;       
-      ambientcol = glGetUniformLocation(shaderprogram,"ambient") ;       
-      diffusecol = glGetUniformLocation(shaderprogram,"diffuse") ;       
-      specularcol = glGetUniformLocation(shaderprogram,"specular") ;       
-      emissioncol = glGetUniformLocation(shaderprogram,"emission") ;       
-      shininesscol = glGetUniformLocation(shaderprogram,"shininess") ;       
+    // Initialize shaders
+    vertexshader = initshaders(GL_VERTEX_SHADER, "shaders/light.vert.glsl") ;
+    fragmentshader = initshaders(GL_FRAGMENT_SHADER, "shaders/light.frag.glsl") ;
+    shaderprogram = initprogram(vertexshader, fragmentshader) ; 
+    enablelighting = glGetUniformLocation(shaderprogram,"enablelighting") ;
+    lightpos = glGetUniformLocation(shaderprogram,"lightposn") ;          
+    lightcol = glGetUniformLocation(shaderprogram,"lightcolor") ;       
+    numusedcol = glGetUniformLocation(shaderprogram,"numused") ;       
+    ambientcol = glGetUniformLocation(shaderprogram,"ambient") ;       
+    diffusecol = glGetUniformLocation(shaderprogram,"diffuse") ;       
+    specularcol = glGetUniformLocation(shaderprogram,"specular") ;       
+    emissioncol = glGetUniformLocation(shaderprogram,"emission") ;       
+    shininesscol = glGetUniformLocation(shaderprogram,"shininess") ;       
+
+    // Init shadow map shaders + variables
+    s_vertexshader = initshaders(GL_VERTEX_SHADER, "shaders/shadow.vert.glsl");
+    s_fragshader = initshaders(GL_VERTEX_SHADER, "shaders/shadow.frag.glsl");
+    shadowprogram = initprogram(s_vertexshader, s_fragshader);
+    depthmatrix = glGetUniformLocation(shadowprogram, "depthmatrix");
+    shadowmap = glGetUniformLocation(shaderprogram, "shadowmap"); 
+    genShadowFrame(1024, 1024);
 }
 
 int main(int argc, char* argv[]) {

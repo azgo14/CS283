@@ -5,8 +5,7 @@
 
 // This is the basic include file for the global variables in the program.  
 // Since all files need access to it, we define EXTERN as either blank or 
-// extern, depending on if included in the main program or not.  
-
+// extern, depending on if included in the main program or not.
 #ifdef MAINPROGRAM 
 #define EXTERN 
 #else 
@@ -21,6 +20,7 @@ EXTERN vec3 up;  // The (regularly updated) vector coordinates of the up
 vec3 eyeinit(0.0,0.0,5.0) ; // Initial eye position, also for resets
 vec3 upinit(0.0,1.0,0.0) ; // Initial up position, also for resets
 vec3 center(0.0,0.0,0.0) ; // Center look at point 
+vec3 centerinit(0.0,0.0,0.0) ;
 int w = 600, h = 400 ; // width and height 
 float fovy = 90.0 ; // For field of view
 int use_light = -1 ; // don't use any lights as default
@@ -83,4 +83,12 @@ EXTERN GLuint diffusecol ;
 EXTERN GLuint specularcol ; 
 EXTERN GLuint emissioncol ; 
 EXTERN GLuint shininesscol ; 
+
+EXTERN GLuint s_vertexshader, s_fragshader, shadowprogram;
+EXTERN GLuint s_frame_id;
+EXTERN GLuint s_depth_texture_id;
+EXTERN GLuint depthmatrix;
+EXTERN GLuint shadowmap;
+EXTERN vec3 inverse_light_dir;
+
 
