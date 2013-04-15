@@ -278,6 +278,7 @@ void init() {
     s_fragshader = initshaders(GL_FRAGMENT_SHADER, "shaders/shadow.frag.glsl");
     shadowprogram = initprogram(s_vertexshader, s_fragshader);
     depthmatrix = glGetUniformLocation(shadowprogram, "depthmatrix");
+    depthbiasmatrix = glGetUniformLocation(shaderprogram, "depthbiasmatrix");
     shadowmap = glGetUniformLocation(shaderprogram, "shadowmap"); 
     genShadowFrame(1024, 1024);
 }

@@ -31,6 +31,9 @@ uniform vec4 specular ;
 uniform vec4 emission ; 
 uniform float shininess ; 
 
+varying vec4 shadowcoord;
+uniform sampler2D shadowmap;
+
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
 
         float nDotL = dot(normal, direction)  ;         
@@ -46,6 +49,12 @@ vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in v
 void main (void) 
 {       
     if (enablelighting) {       
+        
+        float shadow = 1.0;
+        if ( texture2D( shadowmap, shadowcoord.xy ).z  < shadowcoord.z){
+          shadow = 0.5;
+        }
+        
         
         vec4 finalcolor ; 
 
@@ -73,7 +82,7 @@ void main (void)
           finalcolor += col ;
         }
         
-        gl_FragColor = finalcolor ; 
+        gl_FragColor = shadow * finalcolor ; 
     }
     else gl_FragColor = color ; 
 }

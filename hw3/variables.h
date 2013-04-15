@@ -88,6 +88,7 @@ EXTERN GLuint s_vertexshader, s_fragshader, shadowprogram;
 EXTERN GLuint s_frame_id;
 EXTERN GLuint s_depth_texture_id;
 EXTERN GLuint depthmatrix;
+EXTERN GLuint depthbiasmatrix;
 EXTERN GLuint shadowmap;
 EXTERN vec3 inverse_light_dir;
 

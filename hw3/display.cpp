@@ -47,11 +47,15 @@ void transformvec (const GLfloat input[4], GLfloat output[4]) {
 }
 
 void drawScene() {
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    
     glUseProgram(shaderprogram);
     glClearColor(0, 0, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, s_depth_texture_id);
+    glUniform1i(shadowmap, 0);
     // I'm including the basic matrix setup for model view to
     // give some sense of how this works.
 
@@ -119,6 +123,24 @@ void drawScene() {
             glUniform4fv(specularcol, 1, (obj -> specular));
             glUniform4fv(emissioncol, 1, (obj -> emission));
             glUniform1f(shininesscol, (obj -> shininess));
+            
+            // depth matrix
+            mat4 transform = obj -> transform;
+            glm::mat4 depthProjectionMatrix = glm::ortho<float>(-2,2,-2,2,-2,4);
+            std::cout << inverse_light_dir[0] << std::endl;
+            glm::mat4 depthViewMatrix = glm::lookAt(inverse_light_dir, glm::vec3(0,0,0), glm::vec3(0,1,0));
+            glm::mat4 depthModelMatrix = glm::transpose(tr * sc * transform);
+            glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+            glm::mat4 biasMatrix(
+            0.5, 0.0, 0.0, 0.0,
+            0.0, 0.5, 0.0, 0.0,
+            0.0, 0.0, 0.5, 0.0,
+            0.5, 0.5, 0.5, 1.0
+            );
+            depthMVP = biasMatrix * depthMVP;
+            glUniformMatrix4fv(depthbiasmatrix, 1, GL_FALSE, &depthMVP[0][0]);
+            
+
             // Set up the object transformations
             // And pass in the appropriate material properties
         }
@@ -141,7 +163,7 @@ void drawScene() {
 }
 
 void drawShadowMap() {
-    //glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, s_frame_id);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     glUseProgram(shadowprogram);
     glClearColor(1, 1, 1, 1);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -169,17 +191,21 @@ void drawShadowMap() {
     transf = sc * glm::transpose(mv) * transf;
     tr = Transform::translate(tx,ty,0.0) ;
 
-    printMatrix(tr);
     for (int i = 0 ; i < numobjects ; i++) {
         object * obj = &(objects[i]) ;
-        
+        std::cout << i<<std::endl;
             mat4 transform = obj -> transform;
             glm::mat4 depthProjectionMatrix = glm::ortho<float>(-2,2,-2,2,-2,4);
             glm::mat4 depthViewMatrix = glm::lookAt(inverse_light_dir, glm::vec3(0,0,0), glm::vec3(0,1,0));
-            glm::mat4 depthModelMatrix = glm::transpose(tr * sc * transform);
+            glm::mat4 depthModelMatrix = glm::mat4(1.0);
             glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
-            printMatrix(depthViewMatrix);
-            glUniformMatrix4fv(depthmatrix, 1, GL_FALSE, &depthMVP[0][0]);
+            depthMVP = glm::transpose(sc*tr*glm::transpose(depthMVP));
+            depthMVP = glm::transpose(transform * glm::transpose(depthMVP));
+            if (obj -> type == teapot) 
+                printMatrix(transform);
+            glLoadMatrixf(&depthMVP[0][0]) ;
+            
+            //glUniformMatrix4fv(depthmatrix, 1, GL_FALSE, &depthMVP[0][0]);
 
         
         // Actually draw the object
@@ -196,9 +222,11 @@ void drawShadowMap() {
         }
     }
 }
+
+
 void display() {
     drawShadowMap();
-    //drawScene();
+   // drawScene();
     glutSwapBuffers();
     
 }
