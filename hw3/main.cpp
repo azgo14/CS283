@@ -242,17 +242,19 @@ void genShadowFrame(int frame_width, int frame_height) {
     // texture
     glGenTextures(1, &s_depth_texture_id);
     glBindTexture(GL_TEXTURE_2D, s_depth_texture_id);
+    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT16, frame_width, frame_height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-    glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, frame_width, frame_height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, 0);
 
     glDrawBuffer(GL_NONE);
+    glReadBuffer(GL_NONE);
+    
     glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_TEXTURE_2D, s_depth_texture_id, 0);
     
     if (glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) != GL_FRAMEBUFFER_COMPLETE_EXT) {
-        std::cerr << "GL_FRAME_BUFFER_COMPLETE_EXT failed" << std::endl;
+        std::cerr << "glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) error code: " << glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT) << std::endl;
     }
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
     

@@ -21,7 +21,7 @@ vec3 eyeinit(0.0,0.0,5.0) ; // Initial eye position, also for resets
 vec3 upinit(0.0,1.0,0.0) ; // Initial up position, also for resets
 vec3 center(0.0,0.0,0.0) ; // Center look at point 
 vec3 centerinit(0.0,0.0,0.0) ;
-int w = 600, h = 400 ; // width and height 
+int w = 1024, h = 1024 ; // width and height 
 float fovy = 90.0 ; // For field of view
 int use_light = -1 ; // don't use any lights as default
 

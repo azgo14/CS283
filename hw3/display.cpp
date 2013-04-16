@@ -48,7 +48,7 @@ void transformvec (const GLfloat input[4], GLfloat output[4]) {
 
 void drawScene() {
     glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
-    
+    glViewport(0,0,w,h);
     glUseProgram(shaderprogram);
     glClearColor(0, 0, 1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -127,10 +127,11 @@ void drawScene() {
             // depth matrix
             mat4 transform = obj -> transform;
             glm::mat4 depthProjectionMatrix = glm::ortho<float>(-2,2,-2,2,-2,4);
-            std::cout << inverse_light_dir[0] << std::endl;
             glm::mat4 depthViewMatrix = glm::lookAt(inverse_light_dir, glm::vec3(0,0,0), glm::vec3(0,1,0));
-            glm::mat4 depthModelMatrix = glm::transpose(tr * sc * transform);
+            glm::mat4 depthModelMatrix = glm::mat4(1.0);
             glm::mat4 depthMVP = depthProjectionMatrix * depthViewMatrix * depthModelMatrix;
+            depthMVP = glm::transpose(sc*tr*glm::transpose(depthMVP));
+            depthMVP = glm::transpose(transform * glm::transpose(depthMVP));
             glm::mat4 biasMatrix(
             0.5, 0.0, 0.0, 0.0,
             0.0, 0.5, 0.0, 0.0,
@@ -163,7 +164,9 @@ void drawScene() {
 }
 
 void drawShadowMap() {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, s_frame_id);
+    glViewport(0,0,1024,1024);
+
     glUseProgram(shadowprogram);
     glClearColor(1, 1, 1, 1);
     glClear(GL_DEPTH_BUFFER_BIT | GL_COLOR_BUFFER_BIT);
@@ -203,9 +206,8 @@ void drawShadowMap() {
             depthMVP = glm::transpose(transform * glm::transpose(depthMVP));
             if (obj -> type == teapot) 
                 printMatrix(transform);
-            glLoadMatrixf(&depthMVP[0][0]) ;
             
-            //glUniformMatrix4fv(depthmatrix, 1, GL_FALSE, &depthMVP[0][0]);
+            glUniformMatrix4fv(depthmatrix, 1, GL_FALSE, &depthMVP[0][0]);
 
         
         // Actually draw the object
@@ -226,7 +228,7 @@ void drawShadowMap() {
 
 void display() {
     drawShadowMap();
-   // drawScene();
+    drawScene();
     glutSwapBuffers();
     
 }

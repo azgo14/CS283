@@ -4,12 +4,12 @@
 # Scene File for Demo program 
 
 # Set the scene size and camera location 
-size 500 500
+size 1024 1024
 camera 0 -2 2 0 0 0 0 1 1 30.0
 
 # lights.  A single point and directional light
 # Note that your program must support up to 10 lights
-light 0 0 2 0 1 0.5 0 1  
+light 1 2 2 0 1 0.5 0 1  
 #light 0 -0.6 0.1 1 0.5 0.5 1 1 
 
 # I do a global transform to move this down a little 
@@ -24,12 +24,6 @@ translate 0 0 -0.2
   specular 1 1 1 1
   shininess 100
 # Do all object transforms within a push/pop
-  pushTransform
-        translate 0 0 0.1 
-        rotate 1 0 0 90 
-        scale .15 .15 .15
-        teapot 1
-  popTransform
 
 # Floor (white but now with shading)
 # Materials first.  We don't change specular and shininess
@@ -50,9 +44,7 @@ translate 0 0 -0.2
             scale .1 .1 .1
             sphere 1
         popTransform
-        scale 0.2 0.2 .5
-        translate 0 0 0.5
-        cube 1.0 
+
   popTransform
 
 # Pillar 2 

@@ -50,11 +50,6 @@ void main (void)
 {       
     if (enablelighting) {       
         
-        float shadow = 1.0;
-        if ( texture2D( shadowmap, shadowcoord.xy ).z  < shadowcoord.z){
-          shadow = 0.5;
-        }
-        
         
         vec4 finalcolor ; 
 
@@ -67,11 +62,15 @@ void main (void)
 
         vec3 _normal = (gl_ModelViewMatrixInverseTranspose*vec4(mynormal,0.0)).xyz ; 
         vec3 normal = normalize(_normal) ; 
-
+        
+        vec3 light_dir = vec3(-1,-1,-1); 
         for(int i = 0; i < numused; ++i) {
           vec3 direction = vec3(0,0,0) ;
           if (lightposn[i].w == 0) {   // directional
-            direction = normalize (lightposn[i].xyz) ; // assume this is lightdirn   
+            direction = normalize (lightposn[i].xyz) ; // assume this is lightdirn
+            if (light_dir.x == -1) {
+              light_dir = direction;
+            }
           }
           else { // point
             vec3 position = lightposn[i].xyz / lightposn[i].w ;
@@ -80,6 +79,19 @@ void main (void)
           vec3 halfvec = normalize (direction + eyedirn) ;  
           vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
           finalcolor += col ;
+        }
+        float angle = dot(normal, normalize(light_dir));
+        if (angle < .1)  // care only about angles within 90 degrees. don't want tan(acos(0)).
+          angle = .1;
+        if (angle > 1)
+          angle = 1;
+        float shadow_bias = .0007 * tan(acos(angle));
+        if (shadow_bias > .005)
+          shadow_bias = .005;
+        float shadow = 1.0;
+        
+        if ( texture2D( shadowmap, shadowcoord.xy ).z  <  shadowcoord.z - shadow_bias){
+          shadow = 0.5;
         }
         
         gl_FragColor = shadow * finalcolor ; 
