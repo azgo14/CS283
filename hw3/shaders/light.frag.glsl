@@ -36,14 +36,50 @@ uniform sampler2D shadowmap;
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
 
-        float nDotL = dot(normal, direction)  ;         
-        vec4 lambert = mydiffuse * lightcolor * max (nDotL, 0.0) ;  
+    float nDotL = dot(normal, direction)  ;         
+    vec4 lambert = mydiffuse * lightcolor * max (nDotL, 0.0) ;  
 
-        float nDotH = dot(normal, halfvec) ; 
-        vec4 phong = myspecular * lightcolor * pow (max(nDotH, 0.0), myshininess) ; 
+    float nDotH = dot(normal, halfvec) ; 
+    vec4 phong = myspecular * lightcolor * pow (max(nDotH, 0.0), myshininess) ; 
 
-        vec4 retval = lambert + phong ; 
-        return retval ;            
+    vec4 retval = lambert + phong ; 
+    return retval ;            
+}
+
+float computeShadowBias(const in vec3 normal, const in vec3 light_dir) {
+    float angle = dot(normal, normalize(light_dir));
+    if (angle < .1)  // care only about angles within 90 degrees. don't want tan(acos(0)).
+        angle = .1; 
+    if (angle > 1)
+        angle = 1;
+    float shadow_bias = .003 * tan(acos(angle));
+    if (shadow_bias > .007)
+        shadow_bias = .007;
+    return shadow_bias; 
+}
+
+float computeShadowPCF(const in float shadow_bias) {
+    float offset = 1.0 / 1024.0;
+    int shadow_count = 0;
+    for (int i = -1; i < 3; ++i) {
+        for (int j = -1; j < 3; ++j) {
+            if ( texture2D( shadowmap, shadowcoord.xy + vec2(i*offset,j*offset) ).z  >  shadowcoord.z - shadow_bias){
+                shadow_count = shadow_count + 1;
+            } 
+        }
+    }
+    return shadow_count / 16.0;   
+}
+
+float computeShadow(const in vec3 normal, const in vec3 light_dir) {
+    float shadow_bias = computeShadowBias(normal, light_dir);
+    //float shadow = 1.0;
+
+    //if ( texture2D( shadowmap, shadowcoord.xy ).z  <  shadowcoord.z - shadow_bias){
+    //    shadow = 0.5;
+    //}   
+    //return shadow;
+    return computeShadowPCF(shadow_bias);
 }
 
 void main (void) 
@@ -80,20 +116,7 @@ void main (void)
           vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
           finalcolor += col ;
         }
-        float angle = dot(normal, normalize(light_dir));
-        if (angle < .1)  // care only about angles within 90 degrees. don't want tan(acos(0)).
-          angle = .1;
-        if (angle > 1)
-          angle = 1;
-        float shadow_bias = .0007 * tan(acos(angle));
-        if (shadow_bias > .005)
-          shadow_bias = .005;
-        float shadow = 1.0;
-        
-        if ( texture2D( shadowmap, shadowcoord.xy ).z  <  shadowcoord.z - shadow_bias){
-          shadow = 0.5;
-        }
-        
+        float shadow = computeShadow(normal, normalize(light_dir)); 
         gl_FragColor = shadow * finalcolor ; 
     }
     else gl_FragColor = color ; 
