@@ -24,7 +24,8 @@ vec3 centerinit(0.0,0.0,0.0) ;
 int w = 1024, h = 1024 ; // width and height 
 float fovy = 90.0 ; // For field of view
 int use_light = -1 ; // don't use any lights as default
-
+bool shadow_bool = true;
+bool pcf_bool = true;
 #else 
 EXTERN vec3 eyeinit ; 
 EXTERN vec3 upinit ; 
@@ -32,6 +33,8 @@ EXTERN vec3 center ;
 EXTERN int w, h ; 
 EXTERN float fovy ; 
 EXTERN int use_light ;
+EXTERN bool shadow_bool;
+EXTERN bool pcf_bool;
 #endif 
 
 EXTERN bool useGlu; // Toggle use of "official" opengl/glm transform vs user 
@@ -91,5 +94,7 @@ EXTERN GLuint depthmatrix;
 EXTERN GLuint depthbiasmatrix;
 EXTERN GLuint shadowmap;
 EXTERN vec3 inverse_light_dir;
-
+EXTERN GLuint use_shadow;
+EXTERN GLuint use_pcf;
+EXTERN GLuint shadow_buff_size;
 

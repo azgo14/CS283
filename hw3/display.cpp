@@ -58,7 +58,9 @@ void drawScene() {
     glUniform1i(shadowmap, 0);
     // I'm including the basic matrix setup for model view to
     // give some sense of how this works.
-
+    glUniform1i(use_pcf, pcf_bool) ; 
+    glUniform1i(use_shadow, shadow_bool) ;
+    glUniform1f(shadow_buff_size, 1024.0);
     glMatrixMode(GL_MODELVIEW);
     mat4 mv ;
 

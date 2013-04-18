@@ -25,6 +25,10 @@ uniform int numused ;               // number of lights used
 // I use ambient, diffuse, specular, shininess as in OpenGL.  
 // But, the ambient is just additive and doesn't multiply the lights.  
 
+uniform float shadow_buff_size;
+uniform bool use_shadow;
+uniform bool use_pcf;
+
 uniform vec4 ambient ; 
 uniform vec4 diffuse ; 
 uniform vec4 specular ; 
@@ -52,34 +56,35 @@ float computeShadowBias(const in vec3 normal, const in vec3 light_dir) {
         angle = .1; 
     if (angle > 1)
         angle = 1;
-    float shadow_bias = .003 * tan(acos(angle));
-    if (shadow_bias > .007)
-        shadow_bias = .007;
+    float shadow_bias = .0025 * tan(acos(angle));
+    if (shadow_bias > .005)
+        shadow_bias = .005;
     return shadow_bias; 
 }
 
 float computeShadowPCF(const in float shadow_bias) {
-    float offset = 1.0 / 1024.0;
+    float offset = 1.0 / shadow_buff_size;
     int shadow_count = 0;
-    for (int i = -1; i < 3; ++i) {
-        for (int j = -1; j < 3; ++j) {
+    for (int i = -2; i < 3; ++i) {
+        for (int j = -2; j < 3; ++j) {
             if ( texture2D( shadowmap, shadowcoord.xy + vec2(i*offset,j*offset) ).z  >  shadowcoord.z - shadow_bias){
                 shadow_count = shadow_count + 1;
             } 
         }
     }
-    return shadow_count / 16.0;   
+    return shadow_count / 25.0;   
 }
 
 float computeShadow(const in vec3 normal, const in vec3 light_dir) {
     float shadow_bias = computeShadowBias(normal, light_dir);
-    //float shadow = 1.0;
+    float shadow = 1.0;
 
-    //if ( texture2D( shadowmap, shadowcoord.xy ).z  <  shadowcoord.z - shadow_bias){
-    //    shadow = 0.5;
-    //}   
-    //return shadow;
-    return computeShadowPCF(shadow_bias);
+    if (use_pcf) {
+        shadow = .3 + .7 * computeShadowPCF(shadow_bias);
+    } else if ( texture2D( shadowmap, shadowcoord.xy ).z  <  shadowcoord.z - shadow_bias){
+        shadow = 0.3;
+    }   
+    return shadow;
 }
 
 void main (void) 
@@ -116,7 +121,10 @@ void main (void)
           vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
           finalcolor += col ;
         }
-        float shadow = computeShadow(normal, normalize(light_dir)); 
+        float shadow = 1.0;
+        if (use_shadow) {
+            shadow = computeShadow(normal, normalize(light_dir)); 
+        }
         gl_FragColor = shadow * finalcolor ; 
     }
     else gl_FragColor = color ; 

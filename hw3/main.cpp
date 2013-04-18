@@ -109,6 +109,12 @@ void keyboard(unsigned char key, int x, int y) {
 		amount--;
 		std::cout << "amount set to " << amount << "\n" ; 
 		break;
+    case 'p':
+        pcf_bool = !pcf_bool;
+        break;
+    case 'm':
+        shadow_bool = !shadow_bool;
+        break;
 	case 'g':
 		useGlu = !useGlu;
                 reshape(w,h) ; 
@@ -282,6 +288,9 @@ void init() {
     depthmatrix = glGetUniformLocation(shadowprogram, "depthmatrix");
     depthbiasmatrix = glGetUniformLocation(shaderprogram, "depthbiasmatrix");
     shadowmap = glGetUniformLocation(shaderprogram, "shadowmap"); 
+    use_shadow = glGetUniformLocation(shaderprogram, "use_shadow");
+    use_pcf = glGetUniformLocation(shaderprogram, "use_pcf");
+    shadow_buff_size = glGetUniformLocation(shaderprogram, "shadow_buff_size");
     genShadowFrame(1024, 1024);
 }
 
