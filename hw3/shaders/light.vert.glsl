@@ -14,6 +14,7 @@ varying vec4 shadowcoord;
 
 uniform mat4 depthbiasmatrix;
 void main() {
+    gl_TexCoord[0] = gl_MultiTexCoord0;
     gl_Position = gl_ProjectionMatrix * gl_ModelViewMatrix * gl_Vertex ;
     shadowcoord = depthbiasmatrix * gl_Vertex ;
     color = gl_Color ; 

@@ -37,6 +37,7 @@ uniform float shininess ;
 
 varying vec4 shadowcoord;
 uniform sampler2D shadowmap;
+uniform samplerCube cubemap;
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
 
@@ -91,7 +92,10 @@ void main (void)
 {       
     if (enablelighting) {       
         
-        
+        if (gl_TexCoord[0].z != 0) {
+          gl_FragColor = textureCube(cubemap, normalize(gl_TexCoord[0].xyz));
+          return;
+        }
         vec4 finalcolor ; 
 
         finalcolor = ambient + emission ;

@@ -98,5 +98,6 @@ EXTERN GLuint use_shadow;
 EXTERN GLuint use_pcf;
 EXTERN GLuint shadow_buff_size;
 
-EXTERN GLuint cubemap_id;
+EXTERN GLuint cubemap_texture_id;
+EXTERN GLuint cubemap;
 

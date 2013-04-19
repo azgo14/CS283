@@ -269,31 +269,36 @@ void genShadowFrame(int frame_width, int frame_height) {
 }
 
 void createCubeMap() {
+    cubemap = glGetUniformLocation(shaderprogram, "cubemap");
     // cubemap
     std::vector<unsigned char *> cubemap_images;
     int cube_w, cube_h;
-    cubemap_images.push_back(SOIL_load_image("environment/left.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGB));
-    cubemap_images.push_back(SOIL_load_image("environment/front.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGB));
-    cubemap_images.push_back(SOIL_load_image("environment/right.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGB));
-    cubemap_images.push_back(SOIL_load_image("environment/back.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGB));
-    cubemap_images.push_back(SOIL_load_image("environment/up.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGB));
-    cubemap_images.push_back(SOIL_load_image("environment/down.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGB));
+    cubemap_images.push_back(SOIL_load_image("environment/right.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGBA));
+    cubemap_images.push_back(SOIL_load_image("environment/front.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGBA));
+    cubemap_images.push_back(SOIL_load_image("environment/left.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGBA));
     
+    cubemap_images.push_back(SOIL_load_image("environment/back.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGBA));
+    cubemap_images.push_back(SOIL_load_image("environment/up.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGBA));
+    cubemap_images.push_back(SOIL_load_image("environment/down.png", &cube_w, &cube_h, 0, SOIL_LOAD_RGBA));
     glEnable(GL_TEXTURE_CUBE_MAP); 
-    glGenTextures(1, &cubemap_id); 
-    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_id); 
+    glGenTextures(1, &cubemap_texture_id); 
+    glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_id); 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
     
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, 256, 256,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[0]);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, 256, 256,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[1]);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, 256, 256,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[2]);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, 256, 256,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[3]);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, 256, 256,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[4]);
-    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, 256, 256,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[5]);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, cube_w, cube_h,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[0]);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGBA, cube_w, cube_h,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[1]);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGBA, cube_w, cube_h,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[2]);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGBA, cube_w, cube_h,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[3]);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGBA, cube_w, cube_h,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[4]);
+    glTexImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGBA, cube_w, cube_h,0, GL_RGBA, GL_UNSIGNED_BYTE, cubemap_images[5]);
+    
+    for (std::vector<unsigned char *>::iterator it = cubemap_images.begin(); it != cubemap_images.end(); ++it) {
+        SOIL_free_image_data( *it );
+    }
     
 }
 
@@ -312,7 +317,7 @@ void init() {
     emissioncol = glGetUniformLocation(shaderprogram,"emission") ;       
     shininesscol = glGetUniformLocation(shaderprogram,"shininess") ;       
 
-
+    createCubeMap();
 
     // Init shadow map shaders + variables
     s_vertexshader = initshaders(GL_VERTEX_SHADER, "shaders/shadow.vert.glsl");
