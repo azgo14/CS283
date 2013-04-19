@@ -48,10 +48,10 @@ void transformvec (const GLfloat input[4], GLfloat output[4]) {
 }
 std::vector<glm::vec3> cube_vertices, cube_normals, cube_textures;
 void init_cube() {
-    double width = 10;
-    double length = 10;
-    double height = 10;
-    double y_start = -5;
+    double width = 100;
+    double length = 100;
+    double height = 100;
+    double y_start = -50;
     double pad = 10;
     
     if (cube_vertices.size() == 0) {
