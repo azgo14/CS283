@@ -270,6 +270,8 @@ void genShadowFrame(int frame_width, int frame_height) {
 
 void createCubeMap() {
     cubemap = glGetUniformLocation(shaderprogram, "cubemap");
+    modelmatrix = glGetUniformLocation(shaderprogram, "modelmatrix");
+    
     // cubemap
     std::vector<unsigned char *> cubemap_images;
     int cube_w, cube_h;

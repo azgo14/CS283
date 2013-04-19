@@ -38,6 +38,7 @@ uniform float shininess ;
 varying vec4 shadowcoord;
 uniform sampler2D shadowmap;
 uniform samplerCube cubemap;
+uniform mat4 modelmatrix;
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
 
@@ -92,7 +93,7 @@ void main (void)
 {       
     if (enablelighting) {       
         
-        if (gl_TexCoord[0].z != 0) {
+        if (gl_TexCoord[0].z != 0) { // for skybox only
           gl_FragColor = textureCube(cubemap, normalize(gl_TexCoord[0].xyz));
           return;
         }
@@ -108,6 +109,7 @@ void main (void)
         vec3 _normal = (gl_ModelViewMatrixInverseTranspose*vec4(mynormal,0.0)).xyz ; 
         vec3 normal = normalize(_normal) ; 
         
+        vec3 texnormal = normalize((modelmatrix * vec4(mynormal,0.0)).xyz);
         vec3 light_dir = vec3(-1,-1,-1); 
         for(int i = 0; i < numused; ++i) {
           vec3 direction = vec3(0,0,0) ;
@@ -122,7 +124,10 @@ void main (void)
             direction = normalize (position - mypos) ;
           }
           vec3 halfvec = normalize (direction + eyedirn) ;  
-          vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
+          
+          vec4 light_color = textureCube(cubemap, normalize(texnormal.xyz));
+          
+          vec4 col = ComputeLight(direction, light_color, normal, halfvec, diffuse, specular, shininess) ;
           finalcolor += col ;
         }
         float shadow = 1.0;

@@ -100,4 +100,5 @@ EXTERN GLuint shadow_buff_size;
 
 EXTERN GLuint cubemap_texture_id;
 EXTERN GLuint cubemap;
+EXTERN GLuint modelmatrix;
 

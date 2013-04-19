@@ -283,6 +283,10 @@ void drawScene() {
             glUniform4fv(specularcol, 1, (obj -> specular));
             glUniform4fv(emissioncol, 1, (obj -> emission));
             glUniform1f(shininesscol, (obj -> shininess));
+            mat4 modelm = glm::transpose((obj -> transform) * sc * tr);
+            modelm = glm::transpose(glm::inverse(glm::transpose((obj -> transform) * sc * tr)));
+            
+            glUniformMatrix4fv(modelmatrix, 1, GL_FALSE, &modelm[0][0]);
             
             // depth matrix
             mat4 transform = obj -> transform;
