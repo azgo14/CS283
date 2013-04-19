@@ -380,7 +380,7 @@ void drawShadowMap() {
             glutSolidCube(obj->size) ;
         }
         else if (obj -> type == sphere) {
-            const int tessel = 20 ;
+            const int tessel = 100 ;
             glutSolidSphere(obj->size, tessel, tessel) ;
         }
         else if (obj -> type == teapot) {
