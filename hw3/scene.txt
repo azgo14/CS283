@@ -42,4 +42,10 @@ translate 0 0 -0.2
     scale .1 .1 .1
     reflectsphere 1
   popTransform
+  
+  pushTransform
+    diffuse .2 .2 1 1
+    translate .5 1 -.5
+    scale .2 .3 .2
+    cube 1
 popTransform
