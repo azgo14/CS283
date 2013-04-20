@@ -30,13 +30,16 @@ translate 0 0 -0.2
   ambient 0 0 0 1
   diffuse 1 1 1 1
   pushTransform
-        scale 1.0 0.025 1 
-        cube 1.0 
+    translate 0 -.2 0
+  
+        scale 3 0.035 3
+        
+        ground 1 
   popTransform
 
   pushTransform
     translate 0 .5 0
     scale .1 .1 .1
-    sphere 1
+    reflectsphere 1
   popTransform
 popTransform

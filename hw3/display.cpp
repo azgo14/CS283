@@ -178,6 +178,50 @@ void init_cube() {
     }
 }
 
+std::vector<glm::vec3> floor_vertices, floor_normals;
+std::vector<glm::vec2> floor_textures;
+void init_floor() {
+    double width = 1;
+    double length = 1;
+    double height = 1;
+    double pad = 0;
+    
+    if (floor_vertices.size() == 0) {
+        floor_vertices.push_back(glm::vec3(-width/2-pad,0,length/2+pad));
+        floor_vertices.push_back(glm::vec3(width/2+pad,0,-length/2-pad));
+        floor_vertices.push_back(glm::vec3(-width/2-pad,0,-length/2-pad));
+        floor_vertices.push_back(glm::vec3(width/2+pad,0,-length/2-pad));
+        floor_vertices.push_back(glm::vec3(-width/2-pad,0,length/2+pad));
+        floor_vertices.push_back(glm::vec3(width/2+pad,0,length/2+pad));
+        floor_normals.push_back(glm::vec3(0,1,0));
+        floor_normals.push_back(glm::vec3(0,1,0));
+        floor_normals.push_back(glm::vec3(0,1,0));
+        floor_normals.push_back(glm::vec3(0,1,0));
+        floor_normals.push_back(glm::vec3(0,1,0));
+        floor_normals.push_back(glm::vec3(0,1,0));
+        floor_textures.push_back(glm::vec2(0, 0));
+        floor_textures.push_back(glm::vec2(8, 8));
+        floor_textures.push_back(glm::vec2(0, 8));
+        floor_textures.push_back(glm::vec2(8, 8));
+        floor_textures.push_back(glm::vec2(0, 0));
+        floor_textures.push_back(glm::vec2(8, 0));
+    }
+}
+
+void drawFloor() {
+    init_floor();
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    //glTexCoordPointer(2, GL_FLOAT, 0, &floor_textures[0]);
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glVertexPointer(3, GL_FLOAT, 0, &floor_vertices[0]);
+    glEnableClientState(GL_NORMAL_ARRAY);
+    glNormalPointer(GL_FLOAT, 0, &floor_normals[0]);
+    glDrawArrays(GL_TRIANGLES, 0, floor_vertices.size());
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_NORMAL_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+}
+
 void drawSkyBox() {
     init_cube();
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
@@ -213,9 +257,9 @@ void drawScene() {
     glEnable(GL_TEXTURE_CUBE_MAP);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_id);
     glUniform1i(cubemap, 0);
-    
+    glUniform1i(is_skybox, true);
     drawSkyBox();
-    
+    glUniform1i(is_skybox, false);
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, s_depth_texture_id);
     glUniform1i(shadowmap, 1);
@@ -226,7 +270,8 @@ void drawScene() {
     glUniform1f(shadow_buff_size, 1024.0);
     
 
-        
+    glUniform3fv(eye_world, 1, &eye[0]);
+    glUniform1i(is_reflect_displacement, reflect_displacement_bool) ;
 
 
     // Transformations for objects, involving translation and scaling
@@ -284,9 +329,13 @@ void drawScene() {
             glUniform4fv(emissioncol, 1, (obj -> emission));
             glUniform1f(shininesscol, (obj -> shininess));
             mat4 modelm = glm::transpose((obj -> transform) * sc * tr);
-            modelm = glm::transpose(glm::inverse(glm::transpose((obj -> transform) * sc * tr)));
+            modelm = glm::transpose((obj -> transform) * sc * tr);
             
             glUniformMatrix4fv(modelmatrix, 1, GL_FALSE, &modelm[0][0]);
+            
+            modelm = glm::inverse(glm::transpose((obj -> transform) * sc * tr)); // still in row order so naturally transposed in col order glsl
+            
+            glUniformMatrix4fv(modelmatrixinversetranspose, 1, GL_FALSE, &modelm[0][0]);
             
             // depth matrix
             mat4 transform = obj -> transform;
@@ -314,21 +363,30 @@ void drawScene() {
         // We provide the actual glut drawing functions for you.
         if (obj -> type == cube) {
             glutSolidCube(obj->size) ;
-        }
-        else if (obj -> type == sphere) {
-            const int tessel = 20 ;
+        } else if (obj -> type == ground) {
+            drawFloor();
+        } else if (obj -> type == reflectsphere) {
+            glUniform1i(is_reflect, true) ; 
+            const int tessel = 100 ;
             glutSolidSphere(obj->size, tessel, tessel) ;
-        }
-        else if (obj -> type == teapot) {
+        } else if (obj -> type == sphere) {
+            const int tessel = 100 ;
+            glutSolidSphere(obj->size, tessel, tessel) ;
+        } else if (obj -> type == teapot) {
             glutSolidTeapot(obj->size) ;
         }
+        glUniform1i(is_reflect, false) ;
 
     }
 
 }
 
 void drawShadowMap() {
-    glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, s_frame_id);
+    if (display_sm) {
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+    } else {
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, s_frame_id);
+    }
     glViewport(0,0,1024,1024);
 
     glUseProgram(shadowprogram);
@@ -378,8 +436,10 @@ void drawShadowMap() {
         // We provide the actual glut drawing functions for you.
         if (obj -> type == cube) {
             glutSolidCube(obj->size) ;
+        } else if (obj -> type == ground) {
+            drawFloor();
         }
-        else if (obj -> type == sphere) {
+        else if (obj -> type == sphere || obj -> type == reflectsphere) {
             const int tessel = 100 ;
             glutSolidSphere(obj->size, tessel, tessel) ;
         }
@@ -392,7 +452,9 @@ void drawShadowMap() {
 
 void display() {
     drawShadowMap();
-    drawScene();
+    if (!display_sm) {
+        drawScene();
+    }
     glutSwapBuffers();
     
 }

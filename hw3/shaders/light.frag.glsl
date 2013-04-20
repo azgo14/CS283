@@ -38,7 +38,12 @@ uniform float shininess ;
 varying vec4 shadowcoord;
 uniform sampler2D shadowmap;
 uniform samplerCube cubemap;
+uniform mat4 modelmatrixinversetranspose;
 uniform mat4 modelmatrix;
+uniform vec3 eye_world;
+uniform bool is_reflect;
+uniform bool is_reflect_displacement;
+uniform bool is_skybox;
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
 
@@ -93,7 +98,7 @@ void main (void)
 {       
     if (enablelighting) {       
         
-        if (gl_TexCoord[0].z != 0) { // for skybox only
+        if (gl_TexCoord[0].z != 0 && is_skybox) { // for skybox only
           gl_FragColor = textureCube(cubemap, normalize(gl_TexCoord[0].xyz));
           return;
         }
@@ -109,7 +114,13 @@ void main (void)
         vec3 _normal = (gl_ModelViewMatrixInverseTranspose*vec4(mynormal,0.0)).xyz ; 
         vec3 normal = normalize(_normal) ; 
         
-        vec3 texnormal = normalize((modelmatrix * vec4(mynormal,0.0)).xyz);
+        vec4 world_position = modelmatrix * myvertex;
+        vec3 world_eye_dirn = normalize(eye_world - (world_position.xyz / world_position.w));
+        vec3 world_normal = normalize((modelmatrixinversetranspose * vec4(mynormal,0.0)).xyz);
+              
+        float times = 2 * dot(world_eye_dirn, world_normal);
+        vec3 world_reflect_dir = normalize(-world_eye_dirn + (times * world_normal));
+        
         vec3 light_dir = vec3(-1,-1,-1); 
         for(int i = 0; i < numused; ++i) {
           vec3 direction = vec3(0,0,0) ;
@@ -125,10 +136,17 @@ void main (void)
           }
           vec3 halfvec = normalize (direction + eyedirn) ;  
           
-          vec4 light_color = textureCube(cubemap, normalize(texnormal.xyz));
-          
-          vec4 col = ComputeLight(direction, light_color, normal, halfvec, diffuse, specular, shininess) ;
-          finalcolor += col ;
+          if (is_reflect) {
+            vec4 col = textureCube(cubemap, normalize(world_reflect_dir.xyz));
+            if (is_reflect_displacement) {
+              float nDotL = dot(normal, direction);
+              col = col * max (nDotL, 0.0) ; 
+            }
+            finalcolor += col ;
+          } else {
+            vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
+            finalcolor += col ;
+          }
         }
         float shadow = 1.0;
         if (use_shadow) {

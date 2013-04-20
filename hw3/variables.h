@@ -26,6 +26,8 @@ float fovy = 90.0 ; // For field of view
 int use_light = -1 ; // don't use any lights as default
 bool shadow_bool = true;
 bool pcf_bool = true;
+bool reflect_displacement_bool = false;
+bool display_sm = false;
 #else 
 EXTERN vec3 eyeinit ; 
 EXTERN vec3 upinit ; 
@@ -35,12 +37,14 @@ EXTERN float fovy ;
 EXTERN int use_light ;
 EXTERN bool shadow_bool;
 EXTERN bool pcf_bool;
+EXTERN bool reflect_displacement_bool;
+EXTERN bool display_sm;
 #endif 
 
 EXTERN bool useGlu; // Toggle use of "official" opengl/glm transform vs user 
 EXTERN GLuint vertexshader, fragmentshader, shaderprogram ; // shaders
 static enum {view, translate, scale, ltranslate} transop ; // which operation to transform 
-enum shape {cube, sphere, teapot} ;
+enum shape {cube, sphere, teapot, reflectsphere, ground} ;
 EXTERN float sx, sy ; // the scale in x and y 
 EXTERN float tx, ty ; // the translation in x and y
 
@@ -101,4 +105,8 @@ EXTERN GLuint shadow_buff_size;
 EXTERN GLuint cubemap_texture_id;
 EXTERN GLuint cubemap;
 EXTERN GLuint modelmatrix;
-
+EXTERN GLuint modelmatrixinversetranspose;
+EXTERN GLuint eye_world;
+EXTERN GLuint is_reflect;
+EXTERN GLuint is_reflect_displacement;
+EXTERN GLuint is_skybox;

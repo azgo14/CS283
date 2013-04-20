@@ -45,6 +45,19 @@ void reshape(int width, int height){
 	glViewport(0, 0, w, h);
 }
 
+GLuint load_texture(const char * filename) {
+    GLuint tex2d = SOIL_load_OGL_texture(
+                       filename,
+                       SOIL_LOAD_AUTO,
+                       SOIL_CREATE_NEW_ID,
+                       SOIL_FLAG_POWER_OF_TWO| SOIL_FLAG_MIPMAPS | SOIL_FLAG_NTSC_SAFE_RGB | SOIL_FLAG_INVERT_Y);
+    if (tex2d == 0) {
+        cout << SOIL_last_result() << "\n";
+        exit(1);
+    }
+    return tex2d;
+}
+
 void saveScreenshot(string fname) {
 	int pix = w * h;
 	BYTE pixels[3*pix];	
@@ -61,10 +74,13 @@ void saveScreenshot(string fname) {
 
 void printHelp() {
   std::cout << "\npress 'h' to print this message again.\n" 
-       << "press '+' or '-' to change the amount of rotation that\noccurs with each arrow press.\n" 
-            << "press 'g' to switch between using glm::lookAt and glm::Perspective or your own LookAt.\n"       
+            << "press '+' or '-' to change the amount of movement that\noccurs with each arrow press.\n" 
             << "press 'r' to reset the transformations.\n"
-            << "press 'v' 't' 's' to do view [default], translate, scale.\n"
+            << "press 's' to use shadows.\n"
+            << "press 'p' to use pcf shadows when shadows are on\n"
+            << "press 'd' to use diffuse shading with environment reflection\n"
+            << "press 'm' to see how shadow map changes\n"
+            << "press '0' to move around light"
             << "press ESC to quit.\n" ;      
 }
 
@@ -103,6 +119,12 @@ void mouse(int button, int state, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
 	switch(key) {
+	case 'm':
+        display_sm = !display_sm;
+        break;
+	case 'd':
+        reflect_displacement_bool = !reflect_displacement_bool;
+        break;
 	case '+':
 		amount++;
 		std::cout << "amount set to " << amount << "\n" ;
@@ -114,21 +136,16 @@ void keyboard(unsigned char key, int x, int y) {
     case 'p':
         pcf_bool = !pcf_bool;
         break;
-    case 'm':
+    case 's':
         shadow_bool = !shadow_bool;
         break;
-	case 'g':
-		useGlu = !useGlu;
-                reshape(w,h) ; 
-		std::cout << "Using glm::LookAt and glm::Perspective set to: " << (useGlu ? " true " : " false ") << "\n" ; 
-		break;
 	case 'h':
 		printHelp();
 		break;
         case 27:  // Escape to quit
                 exit(0) ;
                 break ;
-        case 'r': // reset eye and up vectors, scale and translate. 
+    case 'r': // reset eye and up vectors, scale and translate. 
 		eye = eyeinit ; 
 		up = upinit ;
 		center = centerinit ; 
@@ -139,74 +156,22 @@ void keyboard(unsigned char key, int x, int y) {
                   lty[i] = 0.0;
                 }
 		break ;   
-        case 'v': 
-                if (use_light == -1) {
-                    transop = view ;
-                    std::cout << "Operation is set to View\n" ; 
-                }
-                break ; 
-        case 't':
-                if (use_light == -1) {
-                  transop = translate ; 
-                  std::cout << "Operation is set to Translate\n" ; 
-                }
-                break ; 
-        case 's':
-                if (use_light == -1) {
-                    transop = scale ; 
-                    std::cout << "Operation is set to Scale\n" ;
-                } 
-                break ; 
+    case 'v': 
+        if (use_light == -1) {
+            transop = view ;
+            std::cout << "Operation is set to View\n" ; 
+        }
+        break ; 
+    case 't':
+        if (use_light == -1) {
+          transop = translate ; 
+          std::cout << "Operation is set to Translate\n" ; 
+        }
+        break ; 
   case '0':
     use_light = 0;
     transop = ltranslate;
-    std::cout << numused << "\n";
     std::cout << "Operation is set to move light " << use_light << "\n" ; 
-    break;
-  case '1':
-    use_light = 1;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ; 
-    break;
-  case '2':
-    use_light = 2;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break;
-  case '3':
-    use_light = 3;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break;  
-  case '4':
-    use_light = 4;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break; 
-  case '5':
-    use_light = 5;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break;
-  case '6':
-    use_light = 6;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break;
-  case '7':
-    use_light = 7;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break;
-  case '8':
-    use_light = 8;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
-    break;
-  case '9':
-    use_light = 9;
-    transop = ltranslate;
-    std::cout << "Operation is set to move light " << use_light << "\n" ;
     break;
   case 'n': // back to nornal
     use_light = -1;
@@ -225,18 +190,30 @@ void specialKey(int key, int x, int y) {
     case 100: //left
         if (transop == view) Transform::side(-amount * .1, eye,  up, center);
         else if (transop == scale) sx -= amount * 0.01 ;
+        else if (transop == ltranslate) {
+            lightposn[0] -= amount * 0.01;
+        }
         break;
     case 101: //up
         if (transop == view) Transform::forward(amount * .1,  eye,  center);
         else if (transop == scale) sy += amount * 0.01 ;
+        else if (transop == ltranslate) {
+            lightposn[1] += amount * 0.01;
+        }
         break;
     case 102: //right
         if (transop == view) Transform::side(amount* .1, eye,  up, center);
         else if (transop == scale) sx += amount * 0.01 ;
+        else if (transop == ltranslate) {
+            lightposn[0] += amount * 0.01;
+        }
         break;
     case 103: //down
         if (transop == view) Transform::forward(-amount* .1,  eye,  center);
         else if (transop == scale) sy -= amount * 0.01 ;
+        else if (transop == ltranslate) {
+            lightposn[1] -= amount * 0.01;
+        }
         break;
     }
     glutPostRedisplay();
@@ -271,6 +248,11 @@ void genShadowFrame(int frame_width, int frame_height) {
 void createCubeMap() {
     cubemap = glGetUniformLocation(shaderprogram, "cubemap");
     modelmatrix = glGetUniformLocation(shaderprogram, "modelmatrix");
+    modelmatrixinversetranspose = glGetUniformLocation(shaderprogram, "modelmatrixinversetranspose");
+    eye_world = glGetUniformLocation(shaderprogram, "eye_world");
+    is_reflect = glGetUniformLocation(shaderprogram, "is_reflect");
+    is_reflect_displacement = glGetUniformLocation(shaderprogram, "is_reflect_displacement");
+    is_skybox = glGetUniformLocation(shaderprogram, "is_skybox");
     
     // cubemap
     std::vector<unsigned char *> cubemap_images;
@@ -302,6 +284,14 @@ void createCubeMap() {
         SOIL_free_image_data( *it );
     }
     
+}
+
+void setupDisplacementMap() {
+    heightsampler = glGetUniformLocation(shaderprogram, "displacemap");
+    floor_texture = load_texture("environment/floor_texture.jpg");
+    floor_normal_map = load_texture("environment/floor_normal.jpg");
+    floor_height_map = load_texture("environment/floor_height.jpg");
+    isdisplace = glGetUniformLocation(shaderprogram, "isdisplace");
 }
 
 void init() {
