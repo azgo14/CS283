@@ -66,6 +66,24 @@ vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in v
     return retval ;            
 }
 
+vec4 ComputeDiffuse (const in vec3 direction, const in vec3 normal, in vec3 world_normal, const in vec4 mydiffuse) {
+    float offset = 1.0 / 1024.0;
+    int filter_half_size = 3;
+    vec4 lambert = vec4(0,0,0,1);
+    for (int i = -filter_half_size; i < filter_half_size; ++i) {
+        for (int j = -filter_half_size; j < filter_half_size; ++j) {
+            for (int k = -filter_half_size; k < filter_half_size; ++k) {
+              vec3 offsets = normalize(vec3(i*offset,j*offset,k*offset);
+              vec3 offset_normal = normalize(world_normal.xyz + offsets);
+              vec4 temp_color = textureCube(cubemap, offset_normal);
+              float nDotL = dot(normal, direction)  ;
+              lambert += (1/(8.0*filter_half_size*filter_half_size*filter_half_size)) * mydiffuse * temp_color * max (nDotL, 0.0) ;
+            } 
+        }
+    }
+    return lambert;
+}
+
 
 float computeShadowBias(const in vec3 normal, const in vec3 light_dir) {
     float angle = dot(normal, normalize(light_dir));
@@ -163,6 +181,7 @@ void main (void)
               float nDotL = dot(normal, direction);
               col = col * max (nDotL, 0.0) ; 
             }
+            col = ComputeDiffuse (direction, normal, world_normal, diffuse);
             finalcolor += col ;
           } else {
             vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
