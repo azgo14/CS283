@@ -205,37 +205,55 @@ void init_cube() {
 std::vector<glm::vec3> floor_vertices, floor_normals, floor_tangents, floor_bitangents;
 std::vector<glm::vec2> floor_textures;
 void init_floor() {
-    double width = 1;
-    double length = 1;
-    double height = 1;
-    double pad = 0;
-    
     if (floor_vertices.size() == 0) {
-        floor_vertices.push_back(glm::vec3(-width/2-pad,0,length/2+pad));
-        floor_vertices.push_back(glm::vec3(width/2+pad,0,-length/2-pad));
-        floor_vertices.push_back(glm::vec3(-width/2-pad,0,-length/2-pad));
-        floor_vertices.push_back(glm::vec3(width/2+pad,0,-length/2-pad));
-        floor_vertices.push_back(glm::vec3(-width/2-pad,0,length/2+pad));
-        floor_vertices.push_back(glm::vec3(width/2+pad,0,length/2+pad));
-        floor_normals.push_back(glm::vec3(0,1,0));
-        floor_normals.push_back(glm::vec3(0,1,0));
-        floor_normals.push_back(glm::vec3(0,1,0));
-        floor_normals.push_back(glm::vec3(0,1,0));
-        floor_normals.push_back(glm::vec3(0,1,0));
-        floor_normals.push_back(glm::vec3(0,1,0));
-        floor_textures.push_back(glm::vec2(0, 0));
-        floor_textures.push_back(glm::vec2(8, 8));
-        floor_textures.push_back(glm::vec2(0, 8));
-        floor_textures.push_back(glm::vec2(8, 8));
-        floor_textures.push_back(glm::vec2(0, 0));
-        floor_textures.push_back(glm::vec2(8, 0));
+        double width = 1;
+        double length = 1;
+        double height = 0;
+        float divide = 500.0;
+        float increment_height = 4.0/divide;
+        float increment_width = 4.0/divide;
+        int t_x = 0;
+        int t_y = 0;
+        for (float x = -width/2; x < width/2; x+=width/divide) {
+          t_y = 0;
+          for (float y = length/2; y > -length/2; y-=length/divide) {
+            glm::vec3 v1 = glm::vec3(x+width/divide, -height/2, y);
+            glm::vec3 v2 = glm::vec3(x+width/divide, -height/2, y-length/divide);
+            glm::vec3 v3 = glm::vec3(x, -height/2, y-length/divide);
+            glm::vec3 v4 = glm::vec3(x, -height/2, y);
+            // bottom face
+            floor_vertices.push_back(v4);
+            floor_vertices.push_back(v1);
+            floor_vertices.push_back(v2);
+            floor_vertices.push_back(v4);
+            floor_vertices.push_back(v2);
+            floor_vertices.push_back(v3);
+            floor_normals.push_back(glm::vec3(0, 1, 0));
+            floor_normals.push_back(glm::vec3(0, 1, 0));
+            floor_normals.push_back(glm::vec3(0, 1, 0));
+            floor_normals.push_back(glm::vec3(0, 1, 0));
+            floor_normals.push_back(glm::vec3(0, 1, 0));
+            floor_normals.push_back(glm::vec3(0, 1, 0));
+            floor_textures.push_back(glm::vec2(increment_width * t_x, increment_height * t_y));
+            floor_textures.push_back(glm::vec2(increment_width *(t_x+1), increment_height * t_y));
+            floor_textures.push_back(glm::vec2(increment_width *(t_x+1), increment_height * (t_y + 1)));
+            floor_textures.push_back(glm::vec2(increment_width * t_x, increment_height * t_y));
+            floor_textures.push_back(glm::vec2(increment_width *(t_x+1), increment_height * (t_y + 1)));
+            floor_textures.push_back(glm::vec2(increment_width * t_x, increment_height * (t_y + 1)));
+            t_y++;
+          }      
+          t_x++;
+        }
         computeTangents(floor_vertices, floor_normals, floor_textures, &floor_tangents, &floor_bitangents);
-        
     }
+    
 }
 
 void drawFloor() {
     init_floor();
+    glUniform1i(is_displace, use_dmap);
+    glUniform1i(is_bump, use_bump);
+    glUniform1i(is_tex, use_tex);
     
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, floor_normal_map);
@@ -254,7 +272,7 @@ void drawFloor() {
     glUniform1i(texsampler, 1);
     
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, floor_height_map);
+    glBindTexture(GL_TEXTURE_2D, floor_displacement_map);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -267,14 +285,18 @@ void drawFloor() {
     glVertexPointer(3, GL_FLOAT, 0, &floor_vertices[0]);
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_FLOAT, 0, &floor_normals[0]);
-    glEnableVertexAttribArray(tangent_loc);
-    glVertexAttribPointer(tangent_loc, 3, GL_FLOAT, GL_FALSE, 0, &floor_tangents[0]);
-    glEnableVertexAttribArray(bitangent_loc);
-    glVertexAttribPointer(bitangent_loc, 3, GL_FLOAT, GL_FALSE, 0, &floor_bitangents[0]);
+    glEnableVertexAttribArray(tangent);
+    glVertexAttribPointer(tangent, 3, GL_FLOAT, GL_FALSE, 0, &floor_tangents[0]);
+    glEnableVertexAttribArray(bitangent);
+    glVertexAttribPointer(bitangent, 3, GL_FLOAT, GL_FALSE, 0, &floor_bitangents[0]);
     glDrawArrays(GL_TRIANGLES, 0, floor_vertices.size());
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
     glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glUniform1i(is_displace, false);
+    glUniform1i(is_bump, false);
+    glUniform1i(is_tex, false);
+    
 }
 
 void drawSkyBox() {
@@ -308,10 +330,10 @@ void drawScene() {
     }
     glLoadMatrixf(&mv[0][0]) ;
     
-    glActiveTexture(GL_TEXTURE0);
+    glActiveTexture(GL_TEXTURE4);
     glEnable(GL_TEXTURE_CUBE_MAP);
     glBindTexture(GL_TEXTURE_CUBE_MAP, cubemap_texture_id);
-    glUniform1i(cubemap, 0);
+    glUniform1i(cubemap, 4);
     glUniform1i(is_skybox, true);
     drawSkyBox();
     glUniform1i(is_skybox, false);

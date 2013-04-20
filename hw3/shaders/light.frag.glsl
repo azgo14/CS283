@@ -44,6 +44,15 @@ uniform vec3 eye_world;
 uniform bool is_reflect;
 uniform bool is_reflect_diffuse;
 uniform bool is_skybox;
+varying mat3 mytbn;
+uniform bool is_displace;
+uniform bool is_bump;
+uniform bool is_tex;
+
+uniform sampler2D bumpmap;
+uniform sampler2D texmap;
+
+
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
 
@@ -56,6 +65,7 @@ vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in v
     vec4 retval = lambert + phong ; 
     return retval ;            
 }
+
 
 float computeShadowBias(const in vec3 normal, const in vec3 light_dir) {
     float angle = dot(normal, normalize(light_dir));
@@ -121,17 +131,28 @@ void main (void)
         float times = 2 * dot(world_eye_dirn, world_normal);
         vec3 world_reflect_dir = normalize(-world_eye_dirn + (times * world_normal));
         
+        if (is_bump && gl_TexCoord[0].x >= 0) {
+          mypos = mytbn * mypos;
+          eyedirn = normalize(mytbn * eyedirn);
+          normal = normalize(vec3(texture2D(bumpmap, gl_TexCoord[0].xy).rgb * 2.0 - 1.0));
+        }
         vec3 light_dir = vec3(-1,-1,-1); 
         for(int i = 0; i < numused; ++i) {
           vec3 direction = vec3(0,0,0) ;
           if (lightposn[i].w == 0) {   // directional
             direction = normalize (lightposn[i].xyz) ; // assume this is lightdirn
+            if (is_bump && gl_TexCoord[0].x >= 0) {
+              direction = normalize(mytbn * direction);
+            }
             if (light_dir.x == -1) {
               light_dir = direction;
             }
           }
           else { // point
             vec3 position = lightposn[i].xyz / lightposn[i].w ;
+            if (is_bump && gl_TexCoord[0].x >= 0) {
+              position = mytbn * position;
+            }
             direction = normalize (position - mypos) ;
           }
           vec3 halfvec = normalize (direction + eyedirn) ;  
@@ -152,7 +173,11 @@ void main (void)
         if (use_shadow) {
             shadow = computeShadow(normal, normalize(light_dir)); 
         }
-        gl_FragColor = shadow * finalcolor ; 
+        if (is_tex && gl_TexCoord[0].x >= 0) {
+          gl_FragColor = shadow * texture2D(texmap, gl_TexCoord[0].xy) * finalcolor ; 
+        } else {  
+          gl_FragColor = shadow * finalcolor ;
+        }
     }
     else gl_FragColor = color ; 
 }

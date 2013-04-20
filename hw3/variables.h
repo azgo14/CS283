@@ -29,6 +29,8 @@ bool pcf_bool = true;
 bool reflect_diffuse_bool = false;
 bool display_sm = false;
 bool use_dmap = true;
+bool use_bump = true;
+bool use_tex = true;
 
 #else 
 EXTERN vec3 eyeinit ; 
@@ -42,6 +44,8 @@ EXTERN bool pcf_bool;
 EXTERN bool reflect_diffuse_bool;
 EXTERN bool display_sm;
 EXTERN bool use_dmap;
+EXTERN bool use_bump;
+EXTERN bool use_tex;
 
 #endif 
 
@@ -117,11 +121,14 @@ EXTERN GLuint is_skybox;
 
 EXTERN GLuint floor_texture_map;
 EXTERN GLuint floor_normal_map;
-EXTERN GLuint floor_height_map;
+EXTERN GLuint floor_displacement_map;
 EXTERN GLuint displacementsampler;
 EXTERN GLuint is_displace;
+EXTERN GLuint is_bump;
+EXTERN GLuint is_tex;
+
 
 EXTERN GLuint texsampler;
 EXTERN GLuint bumpsampler;
-EXTERN GLuint tangent_loc;
-EXTERN GLuint bitangent_loc;
+EXTERN GLuint tangent;
+EXTERN GLuint bitangent;

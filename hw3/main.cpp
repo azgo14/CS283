@@ -80,6 +80,9 @@ void printHelp() {
             << "press 'p' to use pcf shadows when shadows are on\n"
             << "press 'd' to use diffuse shading with environment reflection\n"
             << "press 'm' to see how shadow map changes\n"
+            << "press 't' to turn on texture (not environment textures)\n"
+            << "press 'b' to turn on bump mapping\n"
+            << "press 'e' to turn on displacement mapping\n"
             << "press '0' to move around light"
             << "press ESC to quit.\n" ;      
 }
@@ -119,6 +122,12 @@ void mouse(int button, int state, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
 	switch(key) {
+	case 't':
+        use_tex = !use_tex;
+        break;
+	case 'b':
+        use_bump = !use_bump;
+        break;
 	case 'e':
         use_dmap = !use_dmap;
         break;
@@ -164,13 +173,7 @@ void keyboard(unsigned char key, int x, int y) {
             transop = view ;
             std::cout << "Operation is set to View\n" ; 
         }
-        break ; 
-    case 't':
-        if (use_light == -1) {
-          transop = translate ; 
-          std::cout << "Operation is set to Translate\n" ; 
-        }
-        break ; 
+        break ;  
   case '0':
     use_light = 0;
     transop = ltranslate;
@@ -294,13 +297,15 @@ void setupDisplacementMap() {
     
     floor_texture_map = load_texture("environment/floor_texture.jpg");
     floor_normal_map = load_texture("environment/floor_normal.jpg");
-    floor_height_map = load_texture("environment/floor_height.jpg");
+    floor_displacement_map = load_texture("environment/floor_height.jpg");
     is_displace = glGetUniformLocation(shaderprogram, "is_displace");
+    is_bump = glGetUniformLocation(shaderprogram, "is_bump");
+    is_tex = glGetUniformLocation(shaderprogram, "is_tex");
     
-    texsampler = glGetUniformLocation(shaderprogram, "tex");
-    bumpsampler = glGetUniformLocation(shaderprogram, "bump");
-    tangent_loc = glGetAttribLocation(shaderprogram, "tangent");
-    bitangent_loc = glGetAttribLocation(shaderprogram, "bitangent");
+    texsampler = glGetUniformLocation(shaderprogram, "texmap");
+    bumpsampler = glGetUniformLocation(shaderprogram, "bumpmap");
+    tangent = glGetAttribLocation(shaderprogram, "tangent");
+    bitangent = glGetAttribLocation(shaderprogram, "bitangent");
 }
 
 void init() {
