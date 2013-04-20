@@ -73,7 +73,7 @@ vec4 ComputeDiffuse (const in vec3 direction, const in vec3 normal, in vec3 worl
     for (int i = -filter_half_size; i < filter_half_size; ++i) {
         for (int j = -filter_half_size; j < filter_half_size; ++j) {
             for (int k = -filter_half_size; k < filter_half_size; ++k) {
-              vec3 offsets = normalize(vec3(i*offset,j*offset,k*offset);
+              vec3 offsets = normalize(vec3(i*offset,j*offset,k*offset));
               vec3 offset_normal = normalize(world_normal.xyz + offsets);
               vec4 temp_color = textureCube(cubemap, offset_normal);
               float nDotL = dot(normal, direction)  ;
@@ -181,7 +181,7 @@ void main (void)
               float nDotL = dot(normal, direction);
               col = col * max (nDotL, 0.0) ; 
             }
-            col = ComputeDiffuse (direction, normal, world_normal, diffuse);
+            //col = ComputeDiffuse (direction, normal, world_normal, diffuse);
             finalcolor += col ;
           } else {
             vec4 col = ComputeLight(direction, lightcolor[i], normal, halfvec, diffuse, specular, shininess) ;
