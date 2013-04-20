@@ -42,7 +42,7 @@ uniform mat4 modelmatrixinversetranspose;
 uniform mat4 modelmatrix;
 uniform vec3 eye_world;
 uniform bool is_reflect;
-uniform bool is_reflect_displacement;
+uniform bool is_reflect_diffuse;
 uniform bool is_skybox;
 
 vec4 ComputeLight (const in vec3 direction, const in vec4 lightcolor, const in vec3 normal, const in vec3 halfvec, const in vec4 mydiffuse, const in vec4 myspecular, const in float myshininess) {
@@ -138,7 +138,7 @@ void main (void)
           
           if (is_reflect) {
             vec4 col = textureCube(cubemap, normalize(world_reflect_dir.xyz));
-            if (is_reflect_displacement) {
+            if (is_reflect_diffuse) {
               float nDotL = dot(normal, direction);
               col = col * max (nDotL, 0.0) ; 
             }

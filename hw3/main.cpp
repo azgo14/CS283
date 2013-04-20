@@ -119,11 +119,14 @@ void mouse(int button, int state, int x, int y) {
 
 void keyboard(unsigned char key, int x, int y) {
 	switch(key) {
+	case 'e':
+        use_dmap = !use_dmap;
+        break;
 	case 'm':
         display_sm = !display_sm;
         break;
 	case 'd':
-        reflect_displacement_bool = !reflect_displacement_bool;
+        reflect_diffuse_bool = !reflect_diffuse_bool;
         break;
 	case '+':
 		amount++;
@@ -251,7 +254,7 @@ void createCubeMap() {
     modelmatrixinversetranspose = glGetUniformLocation(shaderprogram, "modelmatrixinversetranspose");
     eye_world = glGetUniformLocation(shaderprogram, "eye_world");
     is_reflect = glGetUniformLocation(shaderprogram, "is_reflect");
-    is_reflect_displacement = glGetUniformLocation(shaderprogram, "is_reflect_displacement");
+    is_reflect_diffuse = glGetUniformLocation(shaderprogram, "is_reflect_diffuse");
     is_skybox = glGetUniformLocation(shaderprogram, "is_skybox");
     
     // cubemap
@@ -287,11 +290,17 @@ void createCubeMap() {
 }
 
 void setupDisplacementMap() {
-    heightsampler = glGetUniformLocation(shaderprogram, "displacemap");
-    floor_texture = load_texture("environment/floor_texture.jpg");
+    displacementsampler = glGetUniformLocation(shaderprogram, "displacemap");
+    
+    floor_texture_map = load_texture("environment/floor_texture.jpg");
     floor_normal_map = load_texture("environment/floor_normal.jpg");
     floor_height_map = load_texture("environment/floor_height.jpg");
-    isdisplace = glGetUniformLocation(shaderprogram, "isdisplace");
+    is_displace = glGetUniformLocation(shaderprogram, "is_displace");
+    
+    texsampler = glGetUniformLocation(shaderprogram, "tex");
+    bumpsampler = glGetUniformLocation(shaderprogram, "bump");
+    tangent_loc = glGetAttribLocation(shaderprogram, "tangent");
+    bitangent_loc = glGetAttribLocation(shaderprogram, "bitangent");
 }
 
 void init() {
@@ -310,7 +319,8 @@ void init() {
     shininesscol = glGetUniformLocation(shaderprogram,"shininess") ;       
 
     createCubeMap();
-
+    setupDisplacementMap();
+    
     // Init shadow map shaders + variables
     s_vertexshader = initshaders(GL_VERTEX_SHADER, "shaders/shadow.vert.glsl");
     s_fragshader = initshaders(GL_FRAGMENT_SHADER, "shaders/shadow.frag.glsl");

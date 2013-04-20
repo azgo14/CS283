@@ -46,6 +46,30 @@ void transformvec (const GLfloat input[4], GLfloat output[4]) {
             output[i] += modelview[4*j+i] * input[j] ;
     }
 }
+
+void computeTangents(const vector<glm::vec3> & vertices, const vector<glm::vec3> & normals,
+                     const vector<glm::vec2> & textures, vector<glm::vec3> * tangents,
+                     vector<glm::vec3> * bitangents) {
+    for (int tri = 0; tri < vertices.size(); tri=tri+3) {
+        glm::vec3 changeVert1 = vertices[tri+1] - vertices[tri];
+        glm::vec3 changeVert2 = vertices[tri+2] - vertices[tri];
+        glm::vec2 changeTex1 = textures[tri+1] - textures[tri];
+        glm::vec2 changeTex2 = textures[tri+2] - textures[tri];
+       
+        float scale = static_cast<float>(1) / (changeTex1.x * changeTex2.y - changeTex1.y * changeTex2.x);
+        glm::vec3 tangent = scale * (changeVert1 * changeTex2.y - changeVert2 * changeTex1.y);
+        glm::vec3 bitangent = scale * (changeVert2 * changeTex1.x - changeVert1 * changeTex2.x);
+        tangent = glm::normalize(tangent - normals[tri] * glm::dot(normals[tri], tangent));
+        tangents->push_back(tangent);
+        tangents->push_back(tangent);
+        tangents->push_back(tangent);
+        bitangents->push_back(bitangent);
+        bitangents->push_back(bitangent);
+        bitangents->push_back(bitangent);
+    }
+}
+
+
 std::vector<glm::vec3> cube_vertices, cube_normals, cube_textures;
 void init_cube() {
     double width = 100;
@@ -178,7 +202,7 @@ void init_cube() {
     }
 }
 
-std::vector<glm::vec3> floor_vertices, floor_normals;
+std::vector<glm::vec3> floor_vertices, floor_normals, floor_tangents, floor_bitangents;
 std::vector<glm::vec2> floor_textures;
 void init_floor() {
     double width = 1;
@@ -205,17 +229,48 @@ void init_floor() {
         floor_textures.push_back(glm::vec2(8, 8));
         floor_textures.push_back(glm::vec2(0, 0));
         floor_textures.push_back(glm::vec2(8, 0));
+        computeTangents(floor_vertices, floor_normals, floor_textures, &floor_tangents, &floor_bitangents);
+        
     }
 }
 
 void drawFloor() {
     init_floor();
+    
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, floor_normal_map);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glUniform1i(bumpsampler, 0);
+    
+    glActiveTexture(GL_TEXTURE1);    
+    glBindTexture(GL_TEXTURE_2D, floor_texture_map);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glUniform1i(texsampler, 1);
+    
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, floor_height_map);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glUniform1i(displacementsampler, 2);
+    
     glEnableClientState(GL_TEXTURE_COORD_ARRAY);
-    //glTexCoordPointer(2, GL_FLOAT, 0, &floor_textures[0]);
+    glTexCoordPointer(2, GL_FLOAT, 0, &floor_textures[0]);
     glEnableClientState(GL_VERTEX_ARRAY);
     glVertexPointer(3, GL_FLOAT, 0, &floor_vertices[0]);
     glEnableClientState(GL_NORMAL_ARRAY);
     glNormalPointer(GL_FLOAT, 0, &floor_normals[0]);
+    glEnableVertexAttribArray(tangent_loc);
+    glVertexAttribPointer(tangent_loc, 3, GL_FLOAT, GL_FALSE, 0, &floor_tangents[0]);
+    glEnableVertexAttribArray(bitangent_loc);
+    glVertexAttribPointer(bitangent_loc, 3, GL_FLOAT, GL_FALSE, 0, &floor_bitangents[0]);
     glDrawArrays(GL_TRIANGLES, 0, floor_vertices.size());
     glDisableClientState(GL_VERTEX_ARRAY);
     glDisableClientState(GL_NORMAL_ARRAY);
@@ -260,9 +315,10 @@ void drawScene() {
     glUniform1i(is_skybox, true);
     drawSkyBox();
     glUniform1i(is_skybox, false);
-    glActiveTexture(GL_TEXTURE1);
+    
+    glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, s_depth_texture_id);
-    glUniform1i(shadowmap, 1);
+    glUniform1i(shadowmap, 3);
     // I'm including the basic matrix setup for model view to
     // give some sense of how this works.
     glUniform1i(use_pcf, pcf_bool) ; 
@@ -271,7 +327,7 @@ void drawScene() {
     
 
     glUniform3fv(eye_world, 1, &eye[0]);
-    glUniform1i(is_reflect_displacement, reflect_displacement_bool) ;
+    glUniform1i(is_reflect_diffuse, reflect_diffuse_bool) ;
 
 
     // Transformations for objects, involving translation and scaling

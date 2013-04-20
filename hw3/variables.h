@@ -26,8 +26,10 @@ float fovy = 90.0 ; // For field of view
 int use_light = -1 ; // don't use any lights as default
 bool shadow_bool = true;
 bool pcf_bool = true;
-bool reflect_displacement_bool = false;
+bool reflect_diffuse_bool = false;
 bool display_sm = false;
+bool use_dmap = true;
+
 #else 
 EXTERN vec3 eyeinit ; 
 EXTERN vec3 upinit ; 
@@ -37,8 +39,10 @@ EXTERN float fovy ;
 EXTERN int use_light ;
 EXTERN bool shadow_bool;
 EXTERN bool pcf_bool;
-EXTERN bool reflect_displacement_bool;
+EXTERN bool reflect_diffuse_bool;
 EXTERN bool display_sm;
+EXTERN bool use_dmap;
+
 #endif 
 
 EXTERN bool useGlu; // Toggle use of "official" opengl/glm transform vs user 
@@ -108,5 +112,16 @@ EXTERN GLuint modelmatrix;
 EXTERN GLuint modelmatrixinversetranspose;
 EXTERN GLuint eye_world;
 EXTERN GLuint is_reflect;
-EXTERN GLuint is_reflect_displacement;
+EXTERN GLuint is_reflect_diffuse;
 EXTERN GLuint is_skybox;
+
+EXTERN GLuint floor_texture_map;
+EXTERN GLuint floor_normal_map;
+EXTERN GLuint floor_height_map;
+EXTERN GLuint displacementsampler;
+EXTERN GLuint is_displace;
+
+EXTERN GLuint texsampler;
+EXTERN GLuint bumpsampler;
+EXTERN GLuint tangent_loc;
+EXTERN GLuint bitangent_loc;
