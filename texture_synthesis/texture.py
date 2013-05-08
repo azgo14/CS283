@@ -33,8 +33,8 @@ class Texture:
         print "Creating patches..."
         height_overlap = int(math.floor(p_height * overlap))
         width_overlap = int(math.floor(p_width * overlap))
-        p_height += height_overlap
-        p_width += width_overlap
+        p_height += 2 * height_overlap #overlap on both sides
+        p_width += 2 * width_overlap
         t_height,t_width,dim = self.pixels.shape
         patches = []
         if t_width < p_width and t_height < p_height:
@@ -85,7 +85,7 @@ class Texture:
 
     @staticmethod
     def create_overlap_tex_from_patches(patches, new_t_height,
-                                        new_t_width, overlap):
+                                        new_t_width):
         if len(patches) <= 0:
             print "You did not give me any patches"
             exit(1)   
