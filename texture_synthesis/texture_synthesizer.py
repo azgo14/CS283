@@ -20,7 +20,7 @@ def overlap_patches_synthesizer(args):
     default_texture.load_texture(args.input_file)
     patches = default_texture.create_patches(args.patch_height,
                                              args.patch_width,
-                                             args.overlap_percentage)
+                                             overlap=args.overlap_percentage)
     new_texture = Texture.create_overlap_tex_from_patches(patches,
                                                           args.height,
                                                           args.width)
@@ -34,7 +34,7 @@ def mincut_overlap_patches_synthesizer(args):
     default_texture.load_texture(args.input_file)
     patches = default_texture.create_patches(args.patch_height,
                                              args.patch_width,
-                                             args.overlap_percentage)
+                                             overlap=args.overlap_percentage)
     new_texture = Texture.create_mincut_tex_from_patches(patches,
                                                          args.height,
                                                          args.width)
@@ -65,8 +65,8 @@ def parsePercent(string):
         parse_type = float(string)
     except ValueError:
         raise ArgumentTypeError("'" + string + "' is not an float")
-    if parse_type < 0 or parse_type > 1:
-        raise ArgumentTypeError("'" + string + "' is not in the range 0-1")
+    if parse_type < 0 or parse_type > .5:
+        raise ArgumentTypeError("'" + string + "' is not in the range 0-.5")
     return parse_type
 
 def process_flags():
