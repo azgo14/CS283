@@ -1,10 +1,11 @@
 import numpy as np
 
-def computeL2Error(nparray1, nparray2):
+def compute_l2_error(nparray1, nparray2):
     if nparray1.shape != nparray2.shape:
         print "2 given numpy arrays don't have the same shape"
         exit(1)
-    return sum(sum((nparray1 - nparray2)**2))  
+
+    return sum(sum(sum((nparray1 - nparray2)**2))) 
 
 class TexturePatch:
     # self.pixels is a 2D numpy array 
@@ -29,13 +30,13 @@ class TexturePatch:
         self.pixels[key] = val
 
     # Assume self patch is either left or top of other_patch
-    def getL2Error(self, other_patch, left=True):
+    def get_l2_error(self, other_patch, left=True):
         if left:
-            return computeL2Error(self.right_overlap,
-                                  other_patch.left_overlap)
+            return compute_l2_error(self.right_overlap,
+                                    other_patch.left_overlap)
 
-        return computeL2Error(self.bottom_overlap,
-                              other_path.top_overlap) 
+        return compute_l2_error(self.bottom_overlap,
+                                other_path.top_overlap) 
             
     # Returns the indices of the minimum boundary path
     def get_minimum_error(self, another_block):

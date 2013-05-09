@@ -20,7 +20,7 @@ def overlap_patches_synthesizer(args):
     default_texture.load_texture(args.input_file)
     patches = default_texture.create_patches(args.patch_height,
                                              args.patch_width,
-                                             overlap=args.overlap_percentage)
+                                             overlap=args.overlap_percent)
     new_texture = Texture.create_overlap_tex_from_patches(patches,
                                                           args.height,
                                                           args.width)
@@ -34,7 +34,7 @@ def mincut_overlap_patches_synthesizer(args):
     default_texture.load_texture(args.input_file)
     patches = default_texture.create_patches(args.patch_height,
                                              args.patch_width,
-                                             overlap=args.overlap_percentage)
+                                             overlap=args.overlap_percent)
     new_texture = Texture.create_mincut_tex_from_patches(patches,
                                                          args.height,
                                                          args.width)
