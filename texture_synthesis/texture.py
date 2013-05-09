@@ -87,7 +87,7 @@ class Texture:
     @staticmethod
     def __find_minimum_L2_patch(patches, left_patch_index, top_patch_index):
         l2_error_list = [0] * len(patches)
-        
+        print len(patches)        
         if left_patch_index != -1:
             left_patch = patches[left_patch_index]
             for index,patch in enumerate(patches):
@@ -120,6 +120,7 @@ class Texture:
 
         for h_start in h_patch_start_indices:
             for w_start in w_patch_start_indices:
+                print "Once"
                 h_end = h_start + p_height
                 w_end = w_start + p_width
                
@@ -145,6 +146,7 @@ class Texture:
                 patch_index[h_start:h_end, w_start:w_end] = \
                     chosen_index * np.ones((h_end-h_start,w_end-w_start),
                                            dtype=np.int)
+        return new_texture
                      
     @staticmethod
     def create_mincut_tex_from_patches(patches, new_t_height,
