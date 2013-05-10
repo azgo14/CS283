@@ -60,7 +60,7 @@ class Texture:
             print "You did not give me any patches"
             exit(1)   
         print "Creating simple texture from patches..."
-        p_width,p_height,dim = patches[0].pixels.shape
+        p_height,p_width,dim = patches[0].pixels.shape
          
         w_patch_start_indices = range(new_t_width)[0::p_width]
         h_patch_start_indices = range(new_t_height)[0::p_height]
@@ -108,7 +108,7 @@ class Texture:
             print "You did not give me any patches"
             exit(1)   
         print "Creating overlap texture from patches..."
-        p_width,p_height,dim = patches[0].pixels.shape
+        p_height,p_width,dim = patches[0].pixels.shape
          
         w_patch_start_indices = range(new_t_width)[0::p_width]
         h_patch_start_indices = range(new_t_height)[0::p_height]

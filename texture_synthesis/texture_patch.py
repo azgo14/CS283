@@ -6,6 +6,9 @@ def compute_l2_error(nparray1, nparray2):
         exit(1)
     return np.sum((np.subtract(nparray1,nparray2))**2) 
 
+def compute_mincut(nparray1, nparray2):
+    width,height,dim = nparray1.shape
+
 class TexturePatch:
     # self.pixels is a 2D numpy array 
     def __init__(self, patches, height_overlap, width_overlap):
@@ -27,7 +30,7 @@ class TexturePatch:
 
     def __setitem__(self, key, val):
         self.pixels[key] = val
-
+    
     # Assume self patch is either left or top of other_patch
     def get_l2_error(self, other_patch, left=True):
         if left:
@@ -37,6 +40,5 @@ class TexturePatch:
         return compute_l2_error(self.bottom_overlap,
                                 other_patch.top_overlap) 
             
-    # Returns the indices of the minimum boundary path
-    def get_minimum_error(self, another_block):
-        pass            
+    def get_mincut_boundary(self, other_block, left=True):
+                    
