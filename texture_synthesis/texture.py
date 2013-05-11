@@ -23,12 +23,11 @@ class Texture:
 
     def load_texture(self, filename):
         print "Loading texture from " + filename
-        self.pixels = scipy.misc.imread(filename)
+        self.pixels = np.atleast_3d(scipy.misc.imread(filename))
         print "Done loading texture"
 
     def save_texture(self, filename):
-        print self.pixels.shape
-        scipy.misc.imsave(filename, self.pixels)
+        scipy.misc.imsave(filename, np.squeeze(self.pixels))
 
     def create_patches(self, p_height, p_width, overlap=0):
         print "Creating patches..."

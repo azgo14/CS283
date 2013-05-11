@@ -138,18 +138,18 @@ class TexturePatch:
             elif len(self.bottom_overlap.shape) == 2:
                 height,width = self.bottom_overlap.shape
                 dim = 1
-            mmask_matrix = np.zeros([height, width, dim])
+            mask_matrix = np.zeros([height, width, dim])
             mincut_boundary = np.zeros([height, width, dim])
             for step in mincut_path:
                 row,col = step
                 mask_matrix[row:,col,:] = 1 # 0 for current, 1 for other       
-            print mincut_path
             mincut_boundary[mask_matrix == 0] = \
                 self.bottom_overlap[mask_matrix == 0]
-
             mincut_boundary[mask_matrix == 1] = \
                 other_patch.top_overlap[mask_matrix == 1]
 
+            plt.imshow(np.squeeze(mincut_boundary))
+            plt.show()
             if len(self.pixels.shape) == 3: 
                 p_height,p_width,dim = self.pixels.shape
             elif len(self.pixels.shape) == 2:
