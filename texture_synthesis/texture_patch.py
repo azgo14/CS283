@@ -54,23 +54,38 @@ def compute_mincut(nparray1, nparray2):
 class TexturePatch:
     # self.pixels is a 2D numpy array 
     def __init__(self, patches, height_overlap, width_overlap):
-        if len(patches.shape) == 3:
-            combined_h,combined_w,dim = patches.shape
-        elif len(patches.shape) == 2:
-            combined_h,combined_w = patches.shape
-            dim = 1
-        p_height = combined_h - 2*height_overlap
-        p_width = combined_w - 2*width_overlap
-    
         # See paper for what the overlap looks like and why we did it this way
-        self.left_overlap = patches[:,0:2*width_overlap]
-        self.top_overlap = patches[0:2*height_overlap,:]
-        self.bottom_overlap = patches[p_height:,:]
-        self.right_overlap = patches[:, p_width:]
+        self.full_patch = patches
+        self.height_overlap = height_overlap
+        self.width_overlap = width_overlap
+        self.compute_patch_parts()
+   
+    @staticmethod
+    def copy_patch(patch):
+        new_patch = TexturePatch(np.zeros([]), 0, 0)
+        new_patch.full_patch = np.copy(patch.full_patch)
+        new_patch.height_overlap = patch.height_overlap
+        new_patch.width_overlap = patch.width_overlap
+        new_patch.compute_patch_parts() 
+          
+    def compute_patch_parts(self):
+        if len(self.full_patch.shape) == 3:
+            combined_h,combined_w,dim = self.full_patch.shape
+        elif len(self.full_patch.shape) == 2:
+            combined_h,combined_w = self.full_patch.shape
+            dim = 1
+        p_height = combined_h - 2*self.height_overlap
+        p_width = combined_w - 2*self.width_overlap
+    
+        self.left_overlap = self.full_patch[:,0:2*self.width_overlap]
+        self.top_overlap = self.full_patch[0:2*self.height_overlap,:]
+        self.bottom_overlap = self.full_patch[p_height:,:]
+        self.right_overlap = self.full_patch[:, p_width:]
 
-        self.pixels = patches[height_overlap:height_overlap+p_height,
-                              width_overlap:width_overlap+p_width]
-     
+        self.pixels = \
+            self.full_patch[self.height_overlap:self.height_overlap+p_height,
+                            self.width_overlap:self.width_overlap+p_width]
+    
     def __getitem__(self, key):
         return self.pixels[key]
 
