@@ -62,12 +62,12 @@ class TexturePatch:
    
     @staticmethod
     def copy_patch(patch):
-        new_patch = TexturePatch(np.zeros([]), 0, 0)
+        new_patch = TexturePatch(np.zeros([1, 1, 1]), 0, 0)
         new_patch.full_patch = np.copy(patch.full_patch)
         new_patch.height_overlap = patch.height_overlap
         new_patch.width_overlap = patch.width_overlap
         new_patch.compute_patch_parts() 
-          
+        return new_patch 
     def compute_patch_parts(self):
         if len(self.full_patch.shape) == 3:
             combined_h,combined_w,dim = self.full_patch.shape

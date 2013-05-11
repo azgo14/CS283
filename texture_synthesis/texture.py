@@ -192,6 +192,7 @@ class Texture:
         h_patch_start_indices = range(new_t_height)[0::p_height]
 
         patch_index = -np.ones((new_t_height, new_t_width), dtype=np.int)
+        unique_patch_list = []
 
         # pick all the patches
         for h_start in h_patch_start_indices:
@@ -214,8 +215,11 @@ class Texture:
                     chosen_index = Texture.__find_minimum_L2_patch(patches,
                                                                    left_index,
                                                                    top_index)  
-                chosen_patch = patches[chosen_index]
-               
+                
+                chosen_patch = TexturePatch.copy_patch(patches[chosen_index])
+                chosen_index = len(unique_patch_list)
+                unique_patch_list.append(chosen_patch)
+
                 patch_index[h_start:h_end, w_start:w_end] = \
                     chosen_index * np.ones((h_end-h_start,w_end-w_start),
                                            dtype=np.int)
@@ -230,18 +234,20 @@ class Texture:
                 h_end = h_start + p_height
                 w_end = w_start + p_width
                
-                current_patch = patches[patch_index[h_start,w_start]]
+                current_patch = unique_patch_list[patch_index[h_start,w_start]]
                 right_patch = None
                 bottom_patch = None
                 
                 if h_end >= new_t_height:
                     h_end = new_t_height
                 else:
-                    bottom_patch = patches[patch_index[h_end, w_start]] 
+                    bottom_patch = \
+                        unique_patch_list[patch_index[h_end, w_start]] 
                 if w_end >= new_t_width:
                     w_end = new_t_width
                 else:
-                    right_patch = patches[patch_index[h_start, w_end]]
+                    right_patch = \
+                        unique_patch_list[patch_index[h_start, w_end]]
                 
                 Texture.__calculate_mincut(current_patch,
                                            right_patch, bottom_patch) 
