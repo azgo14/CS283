@@ -120,7 +120,6 @@ class Texture:
 
         for h_start in h_patch_start_indices:
             for w_start in w_patch_start_indices:
-                print "Once"
                 h_end = h_start + p_height
                 w_end = w_start + p_width
                
@@ -147,19 +146,85 @@ class Texture:
                     chosen_index * np.ones((h_end-h_start,w_end-w_start),
                                            dtype=np.int)
         return new_texture
+
+    @staticmethod
+    def __calculate_mincut(current_patch, right_patch, bottom_patch):
+        if right_patch is not None:
+            current_patch.modify_by_mincut_boundary(right_patch)    
+                        
+        if bottom_patch is not None:
+            current_patch.modify_by_mincut_boundary(bottom_patch,
+                                                 left=False)
                      
     @staticmethod
     def create_mincut_tex_from_patches(patches, new_t_height,
-                                       new_t_width, overlap):
+                                       new_t_width):
         if len(patches) <= 0:
             print "You did not give me any patches"
             exit(1)   
-        print "Creating simple texture from patches..."
-        p_width,p_height,dim = patches[0].pixels.shape
+        print "Creating mincut overlap texture from patches..."
+        p_height,p_width,dim = patches[0].pixels.shape
          
         w_patch_start_indices = range(new_t_width)[0::p_width]
         h_patch_start_indices = range(new_t_height)[0::p_height]
 
+        patch_index = -np.ones((new_t_height, new_t_width), dtype=np.int)
+
+        # pick all the patches
+        for h_start in h_patch_start_indices:
+            for w_start in w_patch_start_indices:
+                h_end = h_start + p_height
+                w_end = w_start + p_width
+               
+                if h_end > new_t_height:
+                    h_end = new_t_height 
+                if w_end > new_t_width:
+                    w_end = new_t_width
+
+                chosen_patch = None 
+                chosen_index = -1
+                left_index = patch_index[h_start, w_start-1]
+                top_index = patch_index[h_start - 1, w_start]
+                if left_index == -1 and top_index == -1:
+                    chosen_index = randint(0, len(patches) - 1)
+                else:
+                    chosen_index = Texture.__find_minimum_L2_patch(patches,
+                                                                   left_index,
+                                                                   top_index)  
+                chosen_patch = patches[chosen_index]
+               
+                patch_index[h_start:h_end, w_start:w_end] = \
+                    chosen_index * np.ones((h_end-h_start,w_end-w_start),
+                                           dtype=np.int)
+        
+        
         new_texture = Texture()
         new_texture.init_empty_texture(new_t_height, new_t_width, dim)
-        pass
+
+        # compute the mincuts
+        for h_start in h_patch_start_indices:
+            for w_start in w_patch_start_indices:
+                h_end = h_start + p_height
+                w_end = w_start + p_width
+               
+                current_patch = patches[patch_index[h_start,w_start]]
+                right_patch = None
+                bottom_patch = None
+                
+                if h_end > new_t_height:
+                    h_end = new_t_height
+                else:
+                    bottom_patch = patches[patch_index[h_end, w_start]] 
+                if w_end > new_t_width:
+                    w_end = new_t_width
+                else:
+                    right_patch = patches[patch_index[h_start, w_end]]
+
+                Texture.__calculate_mincut(current_patch,
+                                           right_patch,bottom_patch) 
+
+                new_texture[h_start:h_end,w_start:w_end,:] = \
+                    current_patch[0:h_end-h_start,0:w_end-w_start,:]                
+        
+        return new_texture
+  
