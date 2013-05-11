@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.image as mplimg
 import scipy.misc
 import numpy as np
-from random import choice,randint
+from random import choice,randint,random
 import math
 from operator import itemgetter
 
@@ -50,6 +50,8 @@ class Texture:
                 if row + p_height > t_height or column + p_width > t_width:
                     print "DELETE 1"
                     exit(1)
+                if random() > .1:
+                    continue
                 patches.append(
                     TexturePatch(np.copy(self[row:row+p_height,
                                          column:column+p_width]),
@@ -105,7 +107,12 @@ class Texture:
                 l2_error_list[index] += top_patch.get_l2_error(patch,
                                                                left=False)
         
-        return min(enumerate(l2_error_list), key=itemgetter(1))[0]
+        value = min(enumerate(l2_error_list), key=itemgetter(1))[1]
+        threshold = value * 1.01
+        threshold_list = [error <= threshold for error in l2_error_list]
+        choice_list = np.nonzero(threshold_list)[0].tolist()
+        print len(choice_list)
+        return choice(choice_list)
 
     @staticmethod
     def create_overlap_tex_from_patches(patches, new_t_height,

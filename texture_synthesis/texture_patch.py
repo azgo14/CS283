@@ -147,9 +147,7 @@ class TexturePatch:
                 self.bottom_overlap[mask_matrix == 0]
             mincut_boundary[mask_matrix == 1] = \
                 other_patch.top_overlap[mask_matrix == 1]
-
-            plt.imshow(np.squeeze(mincut_boundary))
-            plt.show()
+            
             if len(self.pixels.shape) == 3: 
                 p_height,p_width,dim = self.pixels.shape
             elif len(self.pixels.shape) == 2:
