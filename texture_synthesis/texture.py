@@ -23,7 +23,7 @@ class Texture:
 
     def load_texture(self, filename):
         print "Loading texture from " + filename
-        self.pixels = mplimg.imread(filename)
+        self.pixels = scipy.misc.imread(filename)
         print "Done loading texture"
 
     def save_texture(self, filename):
@@ -36,7 +36,11 @@ class Texture:
         width_overlap = int(math.floor(p_width * overlap))
         p_height += 2 * height_overlap #overlap on both sides
         p_width += 2 * width_overlap
-        t_height,t_width,dim = self.pixels.shape
+        if len(self.pixels.shape) == 3:
+            t_height,t_width,dim = self.pixels.shape
+        elif len(self.pixels.shape) == 2:
+            t_height,t_width = self.pixels.shape
+            dim = 1
         patches = []
         if t_width < p_width and t_height < p_height:
             print "Given patch width or height dimensions " + \
@@ -48,8 +52,8 @@ class Texture:
                     print "DELETE 1"
                     exit(1)
                 patches.append(
-                    TexturePatch(self[row:row+p_height,
-                                      column:column+p_width,:],
+                    TexturePatch(np.copy(self[row:row+p_height,
+                                         column:column+p_width]),
                                  height_overlap, width_overlap))
         print "Done creating patches"
         return patches
@@ -60,8 +64,11 @@ class Texture:
             print "You did not give me any patches"
             exit(1)   
         print "Creating simple texture from patches..."
-        p_height,p_width,dim = patches[0].pixels.shape
-         
+        if len(patches[0].pixels.shape) == 3:
+            p_height,p_width,dim = patches[0].pixels.shape
+        elif len(patches[0].pixels.shape) == 2:
+            p_height,p_width = patches[0].pixels.shape
+            dim = 1 
         w_patch_start_indices = range(new_t_width)[0::p_width]
         h_patch_start_indices = range(new_t_height)[0::p_height]
 
@@ -108,7 +115,12 @@ class Texture:
             print "You did not give me any patches"
             exit(1)   
         print "Creating overlap texture from patches..."
-        p_height,p_width,dim = patches[0].pixels.shape
+        
+        if len(patches[0].pixels.shape) == 3:
+            p_height,p_width,dim = patches[0].pixels.shape
+        elif len(patches[0].pixels.shape) == 2:
+            p_height,p_width = patches[0].pixels.shape
+            dim = 1 
          
         w_patch_start_indices = range(new_t_width)[0::p_width]
         h_patch_start_indices = range(new_t_height)[0::p_height]
@@ -154,7 +166,7 @@ class Texture:
                         
         if bottom_patch is not None:
             current_patch.modify_by_mincut_boundary(bottom_patch,
-                                                 left=False)
+                                                    left=False)
                      
     @staticmethod
     def create_mincut_tex_from_patches(patches, new_t_height,
@@ -163,8 +175,13 @@ class Texture:
             print "You did not give me any patches"
             exit(1)   
         print "Creating mincut overlap texture from patches..."
-        p_height,p_width,dim = patches[0].pixels.shape
-         
+        
+        if len(patches[0].pixels.shape) == 3:
+            p_height,p_width,dim = patches[0].pixels.shape
+        elif len(patches[0].pixels.shape) == 2:
+            p_height,p_width = patches[0].pixels.shape
+            dim = 1 
+        
         w_patch_start_indices = range(new_t_width)[0::p_width]
         h_patch_start_indices = range(new_t_height)[0::p_height]
 
@@ -211,20 +228,20 @@ class Texture:
                 right_patch = None
                 bottom_patch = None
                 
-                if h_end > new_t_height:
+                if h_end >= new_t_height:
                     h_end = new_t_height
                 else:
                     bottom_patch = patches[patch_index[h_end, w_start]] 
-                if w_end > new_t_width:
+                if w_end >= new_t_width:
                     w_end = new_t_width
                 else:
                     right_patch = patches[patch_index[h_start, w_end]]
-
+                
                 Texture.__calculate_mincut(current_patch,
-                                           right_patch,bottom_patch) 
+                                           right_patch, bottom_patch) 
 
                 new_texture[h_start:h_end,w_start:w_end,:] = \
                     current_patch[0:h_end-h_start,0:w_end-w_start,:]                
-        
+                  
         return new_texture
   
