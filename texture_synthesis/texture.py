@@ -25,7 +25,9 @@ class Texture:
         print "Loading texture from " + filename
         self.pixels = np.atleast_3d(scipy.misc.imread(filename, flatten=gray))
         if blur:
-            self.pixels = scipy.misc.imfilter(self.pixels, 'blur')
+            self.pixels = \
+                np.atleast_3d(scipy.misc.imfilter(self.pixels.squeeze(), 
+                                                   'blur'))
         print "Done loading texture"
 
     def save_texture(self, filename):

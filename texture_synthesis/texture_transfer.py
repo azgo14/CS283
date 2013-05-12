@@ -18,9 +18,9 @@ def texture_transfer(args):
     elif args.corr_map_type == 1:
         source_corr_texture.load_texture(args.source_texture,
                                          gray=True, blur=True)
+        
         target_corr_texture.load_texture(args.target_image,
                                          gray=True, blur=True)
-
     patch_width = args.patch_width
     patch_height = args.patch_height
 
