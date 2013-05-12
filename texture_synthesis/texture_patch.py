@@ -15,7 +15,6 @@ def compute_mincut(nparray1, nparray2):
     elif len(nparray2.shape) == 2:
         height,width = nparray1.shape
         dim = 1
-    print nparray1.shape
     error_matrix = np.zeros([height, width])
     path_pointer_matrix = np.zeros([height, width])
     for row_index in range(height):
