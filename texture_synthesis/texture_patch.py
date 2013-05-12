@@ -68,6 +68,7 @@ class TexturePatch:
         new_patch.width_overlap = patch.width_overlap
         new_patch.compute_patch_parts() 
         return new_patch 
+
     def compute_patch_parts(self):
         if len(self.full_patch.shape) == 3:
             combined_h,combined_w,dim = self.full_patch.shape

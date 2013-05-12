@@ -93,16 +93,14 @@ class Texture:
         return new_texture
 
     @staticmethod
-    def __find_minimum_L2_patch(patches, left_patch_index, top_patch_index):
+    def __find_minimum_L2_patch(patches, left_patch, top_patch):
         l2_error_list = [0] * len(patches)
         print len(patches)        
-        if left_patch_index != -1:
-            left_patch = patches[left_patch_index]
+        if left_patch is not None:
             for index,patch in enumerate(patches):
                 l2_error_list[index] += left_patch.get_l2_error(patch,
                                                                 left=True) 
-        if top_patch_index != -1:
-            top_patch = patches[top_patch_index]
+        if top_patch is not None:
             for index,patch in enumerate(patches):
                 l2_error_list[index] += top_patch.get_l2_error(patch,
                                                                left=False)
@@ -153,9 +151,15 @@ class Texture:
                 if left_index == -1 and top_index == -1:
                     chosen_index = randint(0, len(patches) - 1)
                 else:
+                    left_patch = None
+                    top_patch = None
+                    if left_index != -1:
+                        left_patch = patches[left_index]
+                    if top_index != -1:
+                        top_patch = patches[top_index]
                     chosen_index = Texture.__find_minimum_L2_patch(patches,
-                                                                   left_index,
-                                                                   top_index)  
+                                                                   left_patch,
+                                                                   top_patch)  
                 chosen_patch = patches[chosen_index]
                 new_texture[h_start:h_end,w_start:w_end,:] = \
                     chosen_patch[0:h_end-h_start,0:w_end-w_start,:]                
@@ -212,9 +216,15 @@ class Texture:
                 if left_index == -1 and top_index == -1:
                     chosen_index = randint(0, len(patches) - 1)
                 else:
+                    left_patch = None
+                    top_patch = None
+                    if left_index != -1:
+                        left_patch = unique_patch_list[left_index]
+                    if top_index != -1:
+                        top_patch = unique_patch_list[top_index]
                     chosen_index = Texture.__find_minimum_L2_patch(patches,
-                                                                   left_index,
-                                                                   top_index)  
+                                                                   left_patch,
+                                                                   top_patch)  
                 
                 chosen_patch = TexturePatch.copy_patch(patches[chosen_index])
                 chosen_index = len(unique_patch_list)
